@@ -9,7 +9,12 @@ import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import {
   Alert,
   Box,
+  Button,
   ButtonBase,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   MenuItem,
   Select,
@@ -35,6 +40,7 @@ import {
   DEFAULT_TABLE_ROW_HEIGHT,
   DEFAULT_CELL_PADDING,
   TABLE_TITLE_HEIGHT,
+  fieldLayoutHeight,
   isCompactRow,
   LABEL_SPACE,
   needsAboveLabel,
@@ -172,13 +178,14 @@ const DEFAULT_HEIGHTS: Record<FormFieldType, number> = {
   text: 24,
   checkbox: 16,
   dropdown: 24,
+  radio: 60,
   'static-text': DEFAULT_STATIC_TEXT_HEIGHT,
   image: DEFAULT_IMAGE_HEIGHT,
   divider: 2,
   table: DEFAULT_TABLE_HEADER_HEIGHT + 2 * DEFAULT_TABLE_ROW_HEIGHT
 }
 
-const FILLABLE_TYPES: FormFieldType[] = ['text', 'checkbox', 'dropdown']
+const FILLABLE_TYPES: FormFieldType[] = ['text', 'checkbox', 'dropdown', 'radio']
 
 const PALETTE: {
   type: FormFieldType
@@ -186,6 +193,8 @@ const PALETTE: {
   glyph: string
   color: string
   tile: string
+  dragToken?: string          // custom token sent via DRAG_MIME (overrides type)
+  initPatch?: Partial<FormField>  // extra props applied when field is created
 }[] = [
   {
     type: 'text',
@@ -207,6 +216,22 @@ const PALETTE: {
     glyph: '▾',
     color: C.amber,
     tile: 'rgba(224,168,58,0.15)'
+  },
+  {
+    type: 'radio',
+    label: 'Radio Group',
+    glyph: '◉',
+    color: '#a78bfa',
+    tile: 'rgba(167,139,250,0.15)'
+  },
+  {
+    type: 'radio',
+    label: 'Single Radio',
+    glyph: '○',
+    color: '#a78bfa',
+    tile: 'rgba(167,139,250,0.10)',
+    dragToken: 'radio-single',
+    initPatch: { options: [''], optionStyles: [{}], height: 20 }
   },
   {
     type: 'static-text',
@@ -290,13 +315,15 @@ function makeField(
         ? 'Checkbox'
         : type === 'dropdown'
           ? 'Dropdown'
-          : type === 'static-text'
-            ? 'Section heading'
-            : type === 'image'
-              ? 'Image'
-              : type === 'divider'
-                ? ''
-                : 'Table'
+          : type === 'radio'
+            ? 'Radio'
+            : type === 'static-text'
+              ? 'Section heading'
+              : type === 'image'
+                ? 'Image'
+                : type === 'divider'
+                  ? ''
+                  : 'Table'
   return {
     id: crypto.randomUUID(),
     type,
@@ -309,7 +336,7 @@ function makeField(
     y: 0,
     width: 0,
     height: DEFAULT_HEIGHTS[type],
-    options: type === 'dropdown' ? ['Option 1', 'Option 2'] : undefined,
+    options: (type === 'dropdown' || type === 'radio') ? ['Option 1', 'Option 2'] : undefined,
     content: type === 'static-text' ? 'Text here' : undefined,
     tableConfig: type === 'table' ? defaultTableConfig() : undefined,
     fontSize: type === 'static-text' ? 12 : undefined
@@ -340,6 +367,105 @@ function normalize(fields: FormField[]): FormField[] {
   }
 
   return result
+}
+
+/**
+ * Rough static-text height estimate using Helvetica proportional metrics
+ * (~0.578 × fontSize per character). Matches the export's pre-sizing closely
+ * enough to keep the builder's rebalance in sync without needing pdf-lib fonts.
+ */
+function approxStaticTextHeight(field: FormField): number {
+  const size = field.fontSize ?? 12
+  const lineH = size * 1.4
+  const padT = field.paddingTop ?? 4
+  const padB = field.paddingBottom ?? 4
+  // Use stored width if known, otherwise assume full content width minus margins
+  const fw = (field.width && field.width > 0 ? field.width : PAGE_WIDTH - 2 * PAGE_MARGIN) - 8
+  // Strip HTML tags for a plain-text char count
+  const text = (field.contentHtml || field.content || field.label || '').replace(/<[^>]+>/g, ' ')
+  const words = text.split(/\s+/).filter(Boolean)
+  let lines = 1
+  let lineW = 0
+  for (const word of words) {
+    const ww = (word.length + 1) * size * 0.578
+    if (lineW + ww > fw && lineW > 0) { lines++; lineW = 0 }
+    lineW += ww
+  }
+  return padT + padB + lines * lineH
+}
+
+/**
+ * Detects rows whose computed Y position would fall below the bottom margin and
+ * auto-advances them to the next page. Runs sequentially so cascading overflow
+ * (many rows pushed from page 1 → 2 → 3…) is handled in a single pass.
+ */
+function rebalanceOverflow(fields: FormField[]): {
+  changed: boolean
+  fields: FormField[]
+  maxPage: number
+} {
+  const result = fields.map(f => ({ ...f }))
+
+  // Collect all rows sorted by (origPage, rowNumber)
+  const seen = new Set<string>()
+  const allRows: { origPage: number; rowNum: number }[] = []
+  for (const f of result) {
+    if (!f.row) continue
+    const key = `${f.page || 1}-${f.row}`
+    if (!seen.has(key)) {
+      seen.add(key)
+      allRows.push({ origPage: f.page || 1, rowNum: f.row })
+    }
+  }
+  allRows.sort((a, b) =>
+    a.origPage !== b.origPage ? a.origPage - b.origPage : a.rowNum - b.rowNum
+  )
+
+  let effectivePage = 1
+  let cursorY = CONTENT_TOP
+  let changed = false
+
+  for (const { origPage, rowNum } of allRows) {
+    if (origPage > effectivePage) {
+      effectivePage = origPage
+      cursorY = CONTENT_TOP
+    }
+
+    const rowFields = result.filter(
+      f => (f.page || 1) === origPage && f.row === rowNum
+    )
+    const spacingBefore = rowFields[0]?.spacingBefore ?? 0
+    cursorY -= spacingBefore
+
+    const labelSpace = rowFields.some(f => needsAboveLabel(f)) ? LABEL_SPACE : 0
+    const rowH = Math.max(...rowFields.map(f =>
+      f.type === 'static-text'
+        ? Math.max(fieldLayoutHeight(f), approxStaticTextHeight(f))
+        : fieldLayoutHeight(f)
+    ))
+    let fieldY = cursorY - labelSpace - rowH
+
+    if (fieldY < PAGE_MARGIN) {
+      effectivePage++
+      cursorY = CONTENT_TOP
+      fieldY = cursorY - labelSpace - rowH
+    }
+
+    if (effectivePage !== origPage) {
+      for (const f of result) {
+        if ((f.page || 1) === origPage && f.row === rowNum) {
+          f.page = effectivePage
+          changed = true
+        }
+      }
+    }
+
+    const spacingAfter = rowFields[0]?.spacingAfter ?? 0
+    cursorY = fieldY - (isCompactRow(rowFields) ? ROW_GAP_COMPACT : ROW_GAP) - spacingAfter
+  }
+
+  const maxPage = Math.max(1, ...result.map(f => f.page || 1))
+  return { changed, fields: changed ? normalize(result) : fields, maxPage }
 }
 
 /** Legacy templates have manual x/y and no row — give each field its own row. */
@@ -757,6 +883,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showTableEditor, setShowTableEditor] = useState(false)
+  const [deleteConfirmPage, setDeleteConfirmPage] = useState<number | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   // Free-drag state for absolutely-positioned image fields
@@ -843,15 +970,25 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     return Math.max(total, 1)
   }, [fields, selected])
 
+  // ---- auto-rebalance overflow rows ----------------------------------------
+
+  useEffect(() => {
+    const { changed, fields: rebalanced, maxPage } = rebalanceOverflow(fields)
+    if (changed) {
+      setFields(rebalanced)
+      setPageCount(c => Math.max(c, maxPage))
+    }
+  }, [fields])
+
   // ---- mutations ----------------------------------------------------------
 
-  const addToNewRow = (type: FormFieldType) => {
+  const addToNewRow = (type: FormFieldType, patch?: Partial<FormField>) => {
     setFields(current => {
       const pageRows = current
         .filter(f => (f.page || 1) === page && f.row)
         .map(f => f.row!)
       const maxRow = pageRows.length ? Math.max(...pageRows) : 0
-      const field = makeField(type, page, maxRow + 1, 1)
+      const field = { ...makeField(type, page, maxRow + 1, 1), ...(patch ?? {}) }
       setSelectedId(field.id)
       return normalize([...current, field])
     })
@@ -930,6 +1067,21 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     setSelectedId(current => (current === id ? null : current))
   }
 
+  const deletePage = (pageNum: number) => {
+    setFields(current => {
+      const filtered = current.filter(f => (f.page || 1) !== pageNum)
+      const shifted = filtered.map(f => {
+        const p = f.page || 1
+        return p > pageNum ? { ...f, page: p - 1 } : f
+      })
+      return normalize(shifted)
+    })
+    setPageCount(c => Math.max(1, c - 1))
+    setPage(p => (p >= pageNum ? Math.max(1, p - 1) : p))
+    setSelectedId(null)
+    setDeleteConfirmPage(null)
+  }
+
   const updateField = (id: string, patch: Partial<FormField>) => {
     setFields(current =>
       current.map(f => (f.id === id ? { ...f, ...patch } : f))
@@ -939,23 +1091,28 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   // ---- drag & drop --------------------------------------------------------
 
   type DragPayload =
-    | { kind: 'new'; type: FormFieldType }
+    | { kind: 'new'; type: FormFieldType; patch?: Partial<FormField> }
     | { kind: 'move'; id: string }
 
   const readDrag = (e: React.DragEvent): DragPayload | null => {
     const moveId = e.dataTransfer.getData(DRAG_FIELD_MIME)
     if (moveId) return { kind: 'move', id: moveId }
-    const raw = e.dataTransfer.getData(DRAG_MIME) as FormFieldType
+    const raw = e.dataTransfer.getData(DRAG_MIME)
+    if (raw === 'radio-single') {
+      return { kind: 'new', type: 'radio', patch: { options: [''], optionStyles: [{}], height: DEFAULT_HEIGHTS['checkbox'] } }
+    }
+    const t = raw as FormFieldType
     if (
-      raw === 'text' ||
-      raw === 'checkbox' ||
-      raw === 'dropdown' ||
-      raw === 'static-text' ||
-      raw === 'image' ||
-      raw === 'divider' ||
-      raw === 'table'
+      t === 'text' ||
+      t === 'checkbox' ||
+      t === 'dropdown' ||
+      t === 'radio' ||
+      t === 'static-text' ||
+      t === 'image' ||
+      t === 'divider' ||
+      t === 'table'
     ) {
-      return { kind: 'new', type: raw }
+      return { kind: 'new', type: t }
     }
     return null
   }
@@ -965,8 +1122,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     setDropRow(null)
     const payload = readDrag(e)
     if (!payload) return
-    if (payload.kind === 'new') addToRow(payload.type, rowNumber)
-    else moveFieldToRow(payload.id, rowNumber)
+    if (payload.kind === 'new') {
+      setFields(current => {
+        const cols = current.filter(f => (f.page || 1) === page && f.row === rowNumber).length
+        const field = { ...makeField(payload.type, page, rowNumber, cols + 1), ...(payload.patch ?? {}) }
+        setSelectedId(field.id)
+        return normalize([...current, field])
+      })
+    } else moveFieldToRow(payload.id, rowNumber)
   }
 
   const onDropInGap = (e: React.DragEvent, beforeRow: number) => {
@@ -974,8 +1137,16 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     setDropGap(null)
     const payload = readDrag(e)
     if (!payload) return
-    if (payload.kind === 'new') insertNewRowAt(payload.type, beforeRow)
-    else moveFieldToNewRowAt(payload.id, beforeRow)
+    if (payload.kind === 'new') {
+      setFields(current => {
+        const shifted = current.map(f =>
+          (f.page || 1) === page && f.row && f.row >= beforeRow ? { ...f, row: f.row + 1 } : f
+        )
+        const field = { ...makeField(payload.type, page, beforeRow, 1), ...(payload.patch ?? {}) }
+        setSelectedId(field.id)
+        return normalize([...shifted, field])
+      })
+    } else moveFieldToNewRowAt(payload.id, beforeRow)
   }
 
   const onDropNewRow = (e: React.DragEvent) => {
@@ -983,8 +1154,15 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     setDropNewRow(false)
     const payload = readDrag(e)
     if (!payload) return
-    if (payload.kind === 'new') addToNewRow(payload.type)
-    else moveFieldToNewRowAt(payload.id, rows.length + 1)
+    if (payload.kind === 'new') {
+      setFields(current => {
+        const pageRows = current.filter(f => (f.page || 1) === page && f.row).map(f => f.row!)
+        const maxRow = pageRows.length ? Math.max(...pageRows) : 0
+        const field = { ...makeField(payload.type, page, maxRow + 1, 1), ...(payload.patch ?? {}) }
+        setSelectedId(field.id)
+        return normalize([...current, field])
+      })
+    } else moveFieldToNewRowAt(payload.id, rows.length + 1)
   }
 
   // ---- free-position drag (image fields without a row) --------------------
@@ -1110,16 +1288,37 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
         <Box sx={{ width: '1px', height: 22, bgcolor: C.border, mx: 0.75 }} />
 
         {Array.from({ length: pageCount }, (_, i) => (
-          <MockButton
-            key={i + 1}
-            primary={page === i + 1}
-            onClick={() => {
-              setPage(i + 1)
-              setSelectedId(null)
-            }}
-          >
-            Page {i + 1}
-          </MockButton>
+          <Box key={i + 1} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0 }}>
+            <MockButton
+              primary={page === i + 1}
+              onClick={() => {
+                setPage(i + 1)
+                setSelectedId(null)
+              }}
+              sx={{ borderTopRightRadius: i > 0 ? 0 : undefined, borderBottomRightRadius: i > 0 ? 0 : undefined }}
+            >
+              Page {i + 1}
+            </MockButton>
+            {i > 0 && (
+              <Tooltip title="Delete page">
+                <IconButton
+                  size="small"
+                  onClick={() => setDeleteConfirmPage(i + 1)}
+                  sx={{
+                    height: '100%',
+                    borderRadius: '0 6px 6px 0',
+                    border: `1px solid ${page === i + 1 ? C.accent : C.border}`,
+                    borderLeft: 'none',
+                    px: 0.5,
+                    color: C.muted,
+                    '&:hover': { color: C.red }
+                  }}
+                >
+                  <DeleteOutlinedIcon sx={{ fontSize: 13 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         ))}
         <MockButton
           dashed
@@ -1172,13 +1371,13 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
           <PanelHeading>Fillable fields</PanelHeading>
           <Stack sx={{ gap: 0.75, mb: 2 }}>
             {PALETTE.filter(p => FILLABLE_TYPES.includes(p.type)).map(item => (
-              <PaletteItem key={item.type} item={item} onAdd={addToNewRow} />
+              <PaletteItem key={item.label} item={item} onAdd={addToNewRow} />
             ))}
           </Stack>
           <PanelHeading>Layout &amp; Style</PanelHeading>
           <Stack sx={{ gap: 0.75 }}>
             {PALETTE.filter(p => !FILLABLE_TYPES.includes(p.type)).map(item => (
-              <PaletteItem key={item.type} item={item} onAdd={addToNewRow} />
+              <PaletteItem key={item.label} item={item} onAdd={addToNewRow} />
             ))}
           </Stack>
           <Typography sx={{ fontSize: 11, color: C.muted, mt: 1.5, lineHeight: 1.5 }}>
@@ -1232,6 +1431,19 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                 </Typography>
               </Box>
             )}
+
+            {/* Page bottom boundary — dashed line at the printable bottom margin */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: `${px(PAGE_HEIGHT - PAGE_MARGIN)}px`,
+                left: 0,
+                right: 0,
+                borderTop: '1px dashed rgba(220, 80, 80, 0.45)',
+                pointerEvents: 'none',
+                zIndex: 10,
+              }}
+            />
 
             {rows.map((row, rowIdx) => {
               const rowHeight = Math.max(...row.fields.map(f => f.height || 24))
@@ -1644,7 +1856,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       overflow: 'hidden'
                     }}
                   >
-                    {(['text', 'checkbox', 'dropdown'] as const).map(type => (
+                    {(['text', 'checkbox', 'dropdown', 'radio'] as const).map(type => (
                       <ButtonBase
                         key={type}
                         onClick={() =>
@@ -1652,7 +1864,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                             type,
                             height: DEFAULT_HEIGHTS[type],
                             options:
-                              type === 'dropdown'
+                              (type === 'dropdown' || type === 'radio')
                                 ? (selected.options ?? ['Option 1', 'Option 2'])
                                 : undefined
                           })
@@ -1672,7 +1884,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                           ? 'Text'
                           : type === 'checkbox'
                             ? 'Check'
-                            : 'Drop'}
+                            : type === 'dropdown'
+                              ? 'Drop'
+                              : 'Radio'}
                       </ButtonBase>
                     ))}
                   </Stack>
@@ -1846,25 +2060,44 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                 />
               )}
 
-              {/* Dropdown options */}
-              {selected.type === 'dropdown' && (
+              {/* Dropdown / Radio options */}
+              {(selected.type === 'dropdown' || selected.type === 'radio') && (
                 <Box>
-                  <TextField
-                    label="Placeholder text"
-                    size="small"
-                    placeholder="Select..."
-                    value={selected.dropdownPlaceholder ?? ''}
-                    onChange={e => updateField(selected.id, { dropdownPlaceholder: e.target.value || undefined })}
-                    sx={{ ...darkInputSx, mb: 1 }}
-                  />
+                  {selected.type === 'dropdown' && (
+                    <TextField
+                      label="Placeholder text"
+                      size="small"
+                      placeholder="Select..."
+                      value={selected.dropdownPlaceholder ?? ''}
+                      onChange={e => updateField(selected.id, { dropdownPlaceholder: e.target.value || undefined })}
+                      sx={{ ...darkInputSx, mb: 1 }}
+                    />
+                  )}
+                  {selected.type === 'radio' && (selected.options ?? []).length > 1 && (
+                    <TextField
+                      label="Columns"
+                      size="small"
+                      type="number"
+                      value={selected.radioColumns ?? 1}
+                      onChange={e => updateField(selected.id, { radioColumns: Math.max(1, Number(e.target.value) || 1) })}
+                      sx={{ ...darkInputSx, mb: 1 }}
+                      slotProps={{ htmlInput: { min: 1, max: 6, step: 1 } }}
+                    />
+                  )}
                   <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>Options</Typography>
                   <Stack spacing={0.5}>
                     {(selected.options ?? ['Option 1', 'Option 2']).map((opt, idx) => {
+                      const isRadio = selected.type === 'radio'
                       const style = (selected.optionStyles ?? [])[idx] ?? {}
                       const updateStyle = (patch: Partial<typeof style>) => {
-                        const next = [...(selected.optionStyles ?? (selected.options ?? []).map(() => ({})))]
-                        next[idx] = { ...next[idx], ...patch }
-                        updateField(selected.id, { optionStyles: next })
+                        setFields(cur => cur.map(f => {
+                          if (f.id !== selected.id) return f
+                          const existing = f.optionStyles ?? []
+                          const opts     = f.options ?? []
+                          const next     = opts.map((_, i) => ({ ...(existing[i] ?? {}) }))
+                          next[idx]      = { ...next[idx], ...patch }
+                          return { ...f, optionStyles: next }
+                        }))
                       }
                       const isBold   = style.fontWeight === 'bold'
                       const isItalic = style.fontStyle  === 'italic'
@@ -1881,62 +2114,63 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                             }}
                             sx={{ ...darkInputSx, flex: 1, minWidth: 0 }}
                           />
-                          {/* font size */}
-                          <TextField
-                            size="small"
-                            type="number"
-                            value={style.fontSize ?? ''}
-                            placeholder="sz"
-                            onChange={e => updateStyle({ fontSize: Number(e.target.value) || undefined })}
-                            slotProps={{ htmlInput: { min: 6, max: 72, step: 1 } }}
-                            sx={{ ...darkInputSx, width: 38, '& input': { px: '4px', py: '4px', textAlign: 'center', fontSize: 11 } }}
-                          />
-                          {/* B / I */}
-                          {(['bold', 'italic'] as const).map(s => {
-                            const active = s === 'bold' ? isBold : isItalic
-                            return (
-                              <ButtonBase
-                                key={s}
-                                onClick={() => updateStyle(
-                                  s === 'bold'
-                                    ? { fontWeight: active ? 'normal' : 'bold' }
-                                    : { fontStyle: active ? 'normal' : 'italic' }
-                                )}
-                                sx={{
-                                  width: 24, height: 24, borderRadius: '4px',
-                                  border: `1px solid ${C.border}`,
-                                  bgcolor: active ? C.accent : 'transparent',
-                                  color: active ? C.accentText : C.muted,
-                                  fontWeight: s === 'bold' ? 700 : 400,
-                                  fontStyle: s === 'italic' ? 'italic' : 'normal',
-                                  fontSize: 12, flexShrink: 0
-                                }}
-                              >
-                                {s === 'bold' ? 'B' : 'I'}
-                              </ButtonBase>
-                            )
-                          })}
-                          {/* color swatch */}
-                          <Tooltip title="Text color">
-                            <Box
-                              component="label"
-                              sx={{
-                                width: 24, height: 24, borderRadius: '4px',
-                                border: `1px solid ${C.border}`,
-                                bgcolor: style.textColor ?? '#1a1a1a',
-                                cursor: 'pointer', flexShrink: 0,
-                                position: 'relative', overflow: 'hidden'
-                              }}
-                            >
-                              <input
-                                type="color"
-                                value={style.textColor ?? '#1a1a1a'}
-                                onChange={e => updateStyle({ textColor: e.target.value })}
-                                style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', border: 'none', padding: 0 }}
+                          {/* Radio-only: font size, B/I, color */}
+                          {isRadio && (
+                            <>
+                              <TextField
+                                size="small"
+                                type="number"
+                                value={style.fontSize ?? ''}
+                                placeholder="sz"
+                                onChange={e => updateStyle({ fontSize: Number(e.target.value) || undefined })}
+                                slotProps={{ htmlInput: { min: 6, max: 72, step: 1 } }}
+                                sx={{ ...darkInputSx, width: 38, '& input': { px: '4px', py: '4px', textAlign: 'center', fontSize: 11 } }}
                               />
-                            </Box>
-                          </Tooltip>
-                          {/* delete */}
+                              {(['bold', 'italic'] as const).map(s => {
+                                const active = s === 'bold' ? isBold : isItalic
+                                return (
+                                  <ButtonBase
+                                    key={s}
+                                    onClick={() => updateStyle(
+                                      s === 'bold'
+                                        ? { fontWeight: active ? 'normal' : 'bold' }
+                                        : { fontStyle: active ? 'normal' : 'italic' }
+                                    )}
+                                    sx={{
+                                      width: 24, height: 24, borderRadius: '4px',
+                                      border: `1px solid ${C.border}`,
+                                      bgcolor: active ? C.accent : 'transparent',
+                                      color: active ? C.accentText : C.muted,
+                                      fontWeight: s === 'bold' ? 700 : 400,
+                                      fontStyle: s === 'italic' ? 'italic' : 'normal',
+                                      fontSize: 12, flexShrink: 0
+                                    }}
+                                  >
+                                    {s === 'bold' ? 'B' : 'I'}
+                                  </ButtonBase>
+                                )
+                              })}
+                              <Tooltip title="Text color">
+                                <Box
+                                  component="label"
+                                  sx={{
+                                    width: 24, height: 24, borderRadius: '4px',
+                                    border: `1px solid ${C.border}`,
+                                    bgcolor: style.textColor ?? '#1a1a1a',
+                                    cursor: 'pointer', flexShrink: 0,
+                                    position: 'relative', overflow: 'hidden'
+                                  }}
+                                >
+                                  <input
+                                    type="color"
+                                    value={style.textColor ?? '#1a1a1a'}
+                                    onChange={e => updateStyle({ textColor: e.target.value })}
+                                    style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', border: 'none', padding: 0 }}
+                                  />
+                                </Box>
+                              </Tooltip>
+                            </>
+                          )}
                           <Tooltip title="Remove">
                             <IconButton
                               size="small"
@@ -2394,9 +2628,46 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   onChange={v => updateField(selected.id, { textColor: v })}
                 />
               )}
-              {/* {(selected.type === 'text' || selected.type === 'dropdown') && (
-                
-              )} */}
+              {selected.type === 'dropdown' && (
+                <Stack direction="row" sx={{ gap: 1 }}>
+                  <TextField
+                    label="Font size (pt)"
+                    size="small"
+                    type="number"
+                    value={selected.fontSize ?? 10}
+                    onChange={e => updateField(selected.id, { fontSize: Number(e.target.value) || 10 })}
+                    sx={{ flex: 1, ...darkInputSx }}
+                    slotProps={{ htmlInput: { min: 6, max: 48, step: 1 } }}
+                  />
+                  <Stack direction="row" sx={{ gap: 0.5 }}>
+                    {(['bold', 'italic'] as const).map(s => {
+                      const isWeight = s === 'bold'
+                      const active = isWeight ? selected.fontWeight === 'bold' : selected.fontStyle === 'italic'
+                      return (
+                        <ButtonBase
+                          key={s}
+                          onClick={() => updateField(selected.id,
+                            isWeight
+                              ? { fontWeight: active ? 'normal' : 'bold' }
+                              : { fontStyle: active ? 'normal' : 'italic' }
+                          )}
+                          sx={{
+                            width: 32, height: 32, borderRadius: '6px',
+                            border: `1px solid ${C.border}`,
+                            bgcolor: active ? C.accent : 'transparent',
+                            color: active ? C.accentText : C.muted,
+                            fontWeight: s === 'bold' ? 700 : 400,
+                            fontStyle: s === 'italic' ? 'italic' : 'normal',
+                            fontSize: 13
+                          }}
+                        >
+                          {s === 'bold' ? 'B' : 'I'}
+                        </ButtonBase>
+                      )
+                    })}
+                  </Stack>
+                </Stack>
+              )}
               <ColorPicker
                 label="Background color"
                 value={selected.backgroundColor ?? '#ffffff'}
@@ -2580,6 +2851,54 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
           )}
         </Box>
       </Stack>
+
+      {/* Delete page confirmation modal */}
+      <Dialog
+        open={deleteConfirmPage !== null}
+        onClose={() => setDeleteConfirmPage(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              bgcolor: C.panel,
+              color: C.text,
+              border: `1px solid ${C.border}`,
+              borderRadius: '8px',
+              minWidth: 320
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontSize: 15, fontWeight: 700, pb: 1 }}>
+          Delete Page {deleteConfirmPage}?
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ fontSize: 13, color: C.muted }}>
+            All fields on Page {deleteConfirmPage} will be permanently removed. This cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
+          <Button
+            size="small"
+            onClick={() => setDeleteConfirmPage(null)}
+            sx={{ color: C.muted, fontSize: 12 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => deleteConfirmPage !== null && deletePage(deleteConfirmPage)}
+            sx={{
+              bgcolor: 'rgba(229,83,75,0.85)',
+              color: '#fff',
+              fontSize: 12,
+              '&:hover': { bgcolor: C.red }
+            }}
+          >
+            Delete Page
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
@@ -2591,16 +2910,16 @@ function PaletteItem({
   onAdd
 }: {
   item: (typeof PALETTE)[0]
-  onAdd: (type: FormFieldType) => void
+  onAdd: (type: FormFieldType, patch?: Partial<FormField>) => void
 }) {
   return (
     <Box
       draggable
       onDragStart={(e: React.DragEvent) => {
-        e.dataTransfer.setData(DRAG_MIME, item.type)
+        e.dataTransfer.setData(DRAG_MIME, item.dragToken ?? item.type)
         e.dataTransfer.effectAllowed = 'copy'
       }}
-      onClick={() => onAdd(item.type)}
+      onClick={() => onAdd(item.type, item.initPatch)}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -2793,6 +3112,43 @@ function FieldCanvas({
     )
   }
 
+  // Single radio — renders inline like a checkbox (circle + label, no container)
+  if (field.type === 'radio' && (field.options ?? []).length <= 1) {
+    const opt = (field.options ?? [''])[0]
+    const s = (field.optionStyles ?? [])[0] ?? {}
+    return (
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: 'center',
+          gap: `${px(CHECKBOX_LABEL_GAP)}px`,
+          height: px(rowLabelSpace + rowHeight),
+          pt: `${px(rowLabelSpace)}px`
+        }}
+      >
+        <Box
+          sx={{
+            width: px(field.height),
+            height: px(field.height),
+            border: `1px solid ${field.borderColor ?? '#999'}`,
+            borderRadius: '50%',
+            bgcolor: '#fafafa',
+            flexShrink: 0
+          }}
+        />
+        <Typography sx={{
+          fontSize: px(s.fontSize ?? 10),
+          fontWeight: s.fontWeight ?? 'normal',
+          fontStyle: s.fontStyle ?? 'normal',
+          color: s.textColor ?? '#333',
+          whiteSpace: 'nowrap'
+        }}>
+          {opt || field.label}
+        </Typography>
+      </Stack>
+    )
+  }
+
   if (field.type === 'checkbox') {
     return (
       <Stack
@@ -2907,20 +3263,56 @@ function FieldCanvas({
           borderTop: `${midW}px solid ${bc}`
         }}
       >
-        {field.type === 'dropdown' && (
-          <>
-            <Typography sx={{
-              fontSize: px(field.optionStyles?.[0]?.fontSize ?? field.fontSize ?? 10),
-              fontWeight: field.optionStyles?.[0]?.fontWeight ?? 'normal',
-              fontStyle: field.optionStyles?.[0]?.fontStyle ?? 'normal',
-              color: field.optionStyles?.[0]?.textColor ?? '#aaa',
-              flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
-            }}>
-              {field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'}
-            </Typography>
-            <Typography sx={{ fontSize: px(9), color: '#777', ml: 0.5, flexShrink: 0 }}>▾</Typography>
-          </>
-        )}
+        {field.type === 'dropdown' && (() => {
+          const hasPlaceholder = !!field.dropdownPlaceholder
+          const displayText = field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'
+          // Only apply option styling when actually showing that option (no placeholder)
+          const optStyle = hasPlaceholder ? null : (field.optionStyles?.[0] ?? null)
+          return (
+            <>
+              <Typography sx={{
+                fontSize: px(optStyle?.fontSize ?? field.fontSize ?? 10),
+                fontWeight: optStyle?.fontWeight ?? 'normal',
+                fontStyle: optStyle?.fontStyle ?? 'normal',
+                color: hasPlaceholder ? '#aaa' : (optStyle?.textColor ?? '#555'),
+                flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
+              }}>
+                {displayText}
+              </Typography>
+              <Typography sx={{ fontSize: px(9), color: '#777', ml: 0.5, flexShrink: 0 }}>▾</Typography>
+            </>
+          )
+        })()}
+        {field.type === 'radio' && (() => {
+          const opts = field.options ?? []
+          const cols = Math.max(1, field.radioColumns ?? 1)
+          const isSingle = opts.length <= 1
+          if (isSingle) {
+            // handled above as a special render path — won't reach here
+            return null
+          }
+          return (
+            <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, width: '100%', gap: `${px(2)}px 0` }}>
+              {opts.map((opt, i) => {
+                const s = (field.optionStyles ?? [])[i] ?? {}
+                return (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: `${px(3)}px` }}>
+                    <Box sx={{ width: px(7), height: px(7), borderRadius: '50%', border: `${px(1)}px solid #999`, bgcolor: '#fff', flexShrink: 0 }} />
+                    <Typography sx={{
+                      fontSize: px(s.fontSize ?? field.fontSize ?? 10),
+                      fontWeight: s.fontWeight ?? 'normal',
+                      fontStyle: s.fontStyle ?? 'normal',
+                      color: s.textColor ?? '#1a1a1a',
+                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
+                    }}>
+                      {opt}
+                    </Typography>
+                  </Box>
+                )
+              })}
+            </Box>
+          )
+        })()}
       </Box>
     </Box>
   )

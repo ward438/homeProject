@@ -18,6 +18,7 @@ export type FormFieldType =
   | 'text'
   | 'checkbox'
   | 'dropdown'
+  | 'radio'
   | 'static-text'
   | 'image'
   | 'divider'
@@ -130,6 +131,9 @@ export type FormField = {
   imageData?: string
   imageObjectFit?: 'contain' | 'fill'
   freePosition?: boolean
+
+  // Radio group layout
+  radioColumns?: number
 
   // Table block
   tableConfig?: TableConfig
