@@ -651,9 +651,14 @@ export async function exportFormPdf(
       }
       page.drawLine({ start: { x: field.x, y: field.y + field.height }, end: { x: field.x + field.width, y: field.y + field.height }, thickness: Math.max(bw, 0.5), color: bcRgb })
       const dropdown = form.createDropdown(fieldName)
-      dropdown.addOptions(field.options ?? ['Option 1'])
+      const placeholder = field.dropdownPlaceholder ?? ''
+      const opts = field.options ?? ['Option 1']
+      const allOpts = placeholder ? [placeholder, ...opts] : opts
+      dropdown.addOptions(allOpts)
+      if (placeholder) dropdown.select(placeholder)
       dropdown.addToPage(page, { x: field.x + insL, y: field.y + insB, width: field.width - insL - insR, height: field.height - insB, borderWidth: 0, backgroundColor: rgb(1, 1, 1), font: regularFont })
-      if (field.fontSize) dropdown.setFontSize(field.fontSize)
+      const dropFontSize = field.optionStyles?.[0]?.fontSize ?? field.fontSize
+      if (dropFontSize) dropdown.setFontSize(dropFontSize)
     } else if (field.type === 'static-text') {
       const size = field.fontSize ?? 12
       const lineHeight = size * 1.4

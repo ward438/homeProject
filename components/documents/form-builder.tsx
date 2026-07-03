@@ -1849,53 +1849,120 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               {/* Dropdown options */}
               {selected.type === 'dropdown' && (
                 <Box>
+                  <TextField
+                    label="Placeholder text"
+                    size="small"
+                    placeholder="Select..."
+                    value={selected.dropdownPlaceholder ?? ''}
+                    onChange={e => updateField(selected.id, { dropdownPlaceholder: e.target.value || undefined })}
+                    sx={{ ...darkInputSx, mb: 1 }}
+                  />
                   <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>Options</Typography>
                   <Stack spacing={0.5}>
-                    {(selected.options ?? ['Option 1', 'Option 2']).map((opt, idx) => (
-                      <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <TextField
-                          size="small"
-                          placeholder={`Option ${idx + 1}`}
-                          value={opt}
-                          onChange={e => {
-                            const next = [...(selected.options ?? [])]
-                            next[idx] = e.target.value
-                            updateField(selected.id, { options: next })
-                          }}
-                          sx={{ ...darkInputSx, flex: 1 }}
-                        />
-                        <Tooltip title="Remove">
-                          <IconButton
+                    {(selected.options ?? ['Option 1', 'Option 2']).map((opt, idx) => {
+                      const style = (selected.optionStyles ?? [])[idx] ?? {}
+                      const updateStyle = (patch: Partial<typeof style>) => {
+                        const next = [...(selected.optionStyles ?? (selected.options ?? []).map(() => ({})))]
+                        next[idx] = { ...next[idx], ...patch }
+                        updateField(selected.id, { optionStyles: next })
+                      }
+                      const isBold   = style.fontWeight === 'bold'
+                      const isItalic = style.fontStyle  === 'italic'
+                      return (
+                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <TextField
                             size="small"
-                            onClick={() => {
-                              const next = (selected.options ?? []).filter((_, i) => i !== idx)
-                              updateField(selected.id, { options: next.length ? next : [''] })
+                            placeholder={`Option ${idx + 1}`}
+                            value={opt}
+                            onChange={e => {
+                              const next = [...(selected.options ?? [])]
+                              next[idx] = e.target.value
+                              updateField(selected.id, { options: next })
                             }}
-                            sx={{ color: C.muted, '&:hover': { color: '#e57373' }, p: '4px' }}
-                          >
-                            <DeleteOutlinedIcon sx={{ fontSize: 15 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    ))}
+                            sx={{ ...darkInputSx, flex: 1, minWidth: 0 }}
+                          />
+                          {/* font size */}
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={style.fontSize ?? ''}
+                            placeholder="sz"
+                            onChange={e => updateStyle({ fontSize: Number(e.target.value) || undefined })}
+                            slotProps={{ htmlInput: { min: 6, max: 72, step: 1 } }}
+                            sx={{ ...darkInputSx, width: 38, '& input': { px: '4px', py: '4px', textAlign: 'center', fontSize: 11 } }}
+                          />
+                          {/* B / I */}
+                          {(['bold', 'italic'] as const).map(s => {
+                            const active = s === 'bold' ? isBold : isItalic
+                            return (
+                              <ButtonBase
+                                key={s}
+                                onClick={() => updateStyle(
+                                  s === 'bold'
+                                    ? { fontWeight: active ? 'normal' : 'bold' }
+                                    : { fontStyle: active ? 'normal' : 'italic' }
+                                )}
+                                sx={{
+                                  width: 24, height: 24, borderRadius: '4px',
+                                  border: `1px solid ${C.border}`,
+                                  bgcolor: active ? C.accent : 'transparent',
+                                  color: active ? C.accentText : C.muted,
+                                  fontWeight: s === 'bold' ? 700 : 400,
+                                  fontStyle: s === 'italic' ? 'italic' : 'normal',
+                                  fontSize: 12, flexShrink: 0
+                                }}
+                              >
+                                {s === 'bold' ? 'B' : 'I'}
+                              </ButtonBase>
+                            )
+                          })}
+                          {/* color swatch */}
+                          <Tooltip title="Text color">
+                            <Box
+                              component="label"
+                              sx={{
+                                width: 24, height: 24, borderRadius: '4px',
+                                border: `1px solid ${C.border}`,
+                                bgcolor: style.textColor ?? '#1a1a1a',
+                                cursor: 'pointer', flexShrink: 0,
+                                position: 'relative', overflow: 'hidden'
+                              }}
+                            >
+                              <input
+                                type="color"
+                                value={style.textColor ?? '#1a1a1a'}
+                                onChange={e => updateStyle({ textColor: e.target.value })}
+                                style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', border: 'none', padding: 0 }}
+                              />
+                            </Box>
+                          </Tooltip>
+                          {/* delete */}
+                          <Tooltip title="Remove">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                const nextOpts   = (selected.options ?? []).filter((_, i) => i !== idx)
+                                const nextStyles = (selected.optionStyles ?? []).filter((_, i) => i !== idx)
+                                updateField(selected.id, { options: nextOpts.length ? nextOpts : [''], optionStyles: nextStyles })
+                              }}
+                              sx={{ color: C.muted, '&:hover': { color: '#e57373' }, p: '2px', flexShrink: 0 }}
+                            >
+                              <DeleteOutlinedIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      )
+                    })}
                   </Stack>
                   <ButtonBase
-                    onClick={() =>
-                      updateField(selected.id, {
-                        options: [...(selected.options ?? []), '']
-                      })
-                    }
+                    onClick={() => updateField(selected.id, {
+                      options: [...(selected.options ?? []), ''],
+                      optionStyles: [...(selected.optionStyles ?? []), {}]
+                    })}
                     sx={{
-                      mt: 0.75,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: 11,
-                      color: C.accent,
-                      px: 0.5,
-                      py: 0.25,
-                      borderRadius: '4px',
-                      '&:hover': { bgcolor: 'rgba(108,158,255,0.1)' }
+                      mt: 0.75, display: 'flex', alignItems: 'center', gap: '4px',
+                      fontSize: 11, color: C.accent, px: 0.5, py: 0.25,
+                      borderRadius: '4px', '&:hover': { bgcolor: 'rgba(108,158,255,0.1)' }
                     }}
                   >
                     <AddIcon sx={{ fontSize: 14 }} />
@@ -2327,19 +2394,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   onChange={v => updateField(selected.id, { textColor: v })}
                 />
               )}
-              {(selected.type === 'text' || selected.type === 'dropdown') && (
-                <TextField
-                  label="Input font size (pt)"
-                  size="small"
-                  type="number"
-                  value={selected.fontSize ?? 10}
-                  onChange={e =>
-                    updateField(selected.id, { fontSize: Number(e.target.value) || 10 })
-                  }
-                  sx={{ ...darkInputSx }}
-                  slotProps={{ htmlInput: { min: 6, max: 48, step: 1 } }}
-                />
-              )}
+              {/* {(selected.type === 'text' || selected.type === 'dropdown') && (
+                
+              )} */}
               <ColorPicker
                 label="Background color"
                 value={selected.backgroundColor ?? '#ffffff'}
@@ -2852,8 +2909,14 @@ function FieldCanvas({
       >
         {field.type === 'dropdown' && (
           <>
-            <Typography sx={{ fontSize: px(field.fontSize ?? 10), color: '#aaa', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-              {(field.options ?? [])[0] ?? 'Select…'}
+            <Typography sx={{
+              fontSize: px(field.optionStyles?.[0]?.fontSize ?? field.fontSize ?? 10),
+              fontWeight: field.optionStyles?.[0]?.fontWeight ?? 'normal',
+              fontStyle: field.optionStyles?.[0]?.fontStyle ?? 'normal',
+              color: field.optionStyles?.[0]?.textColor ?? '#aaa',
+              flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
+            }}>
+              {field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'}
             </Typography>
             <Typography sx={{ fontSize: px(9), color: '#777', ml: 0.5, flexShrink: 0 }}>▾</Typography>
           </>

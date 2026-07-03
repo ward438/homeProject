@@ -61,6 +61,13 @@ export type TableConfig = {
   allowUserInput?: boolean   // when true, all data cells become fillable PDF fields
 }
 
+export type DropdownOptionStyle = {
+  fontSize?: number
+  fontWeight?: 'normal' | 'bold'
+  fontStyle?: 'normal' | 'italic'
+  textColor?: string
+}
+
 export type FormField = {
   id: string
   type: FormFieldType
@@ -71,6 +78,8 @@ export type FormField = {
   width: number
   height: number
   options?: string[]
+  optionStyles?: DropdownOptionStyle[]
+  dropdownPlaceholder?: string
   /** 1-based row index; when set, y is auto-computed at export */
   row?: number
   /** 1-based column index; when set, x/width are auto-computed at export */
