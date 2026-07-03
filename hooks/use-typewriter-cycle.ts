@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 
 type Stage =
-  'init' | 'typing-in' | 'visible' | 'typing-out' | 'switching' | 'idle'
+  | 'init'
+  | 'typing-in'
+  | 'visible'
+  | 'typing-out'
+  | 'switching'
+  | 'idle'
 
 export interface TypewriterCycleOptions {
   /** Duration to show the first item (ms) */

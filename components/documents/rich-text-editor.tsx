@@ -187,7 +187,8 @@ export function RichTextEditor({
   if (!editor) return null
 
   const currentColor = editor.getAttributes('textStyle').color as
-    string | undefined
+    | string
+    | undefined
   const currentFontSize =
     (editor.getAttributes('textStyle').fontSize as string | undefined)?.replace(
       'px',

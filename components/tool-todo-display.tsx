@@ -15,7 +15,10 @@ import TodoListContent from './todo-list-content'
 interface ToolTodoDisplayProps {
   tool: 'todoWrite'
   state:
-    'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+    | 'input-streaming'
+    | 'input-available'
+    | 'output-available'
+    | 'output-error'
   input?: {
     todos?: TodoItem[]
   }
