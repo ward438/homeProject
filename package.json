@@ -18,7 +18,17 @@
     "backfill:file-keys": "bun run scripts/backfill-file-object-keys.ts",
     "test": "NODE_ENV=test vitest run",
     "test:watch": "vitest --watch",
-    "chat": "bun run scripts/chat-cli.ts"
+    "chat": "bun run scripts/chat-cli.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0"
+    ],
+    "*.{json,css,md,yml,yaml,html}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.77",
@@ -121,6 +131,8 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "pdfjs-dist": "^4.10.38",
     "postcss": "^8",
     "prettier": "^3.6.2",
