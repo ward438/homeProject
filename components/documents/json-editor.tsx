@@ -17,6 +17,7 @@ export function JsonEditor({ value, onSave }: JsonEditorProps) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setText(value === null ? '' : JSON.stringify(value, null, 2))
     setError(null)
   }, [value])
@@ -49,7 +50,11 @@ export function JsonEditor({ value, onSave }: JsonEditorProps) {
           }
         }}
       />
-      <Button variant="contained" onClick={save} disabled={saving || !text.trim()}>
+      <Button
+        variant="contained"
+        onClick={save}
+        disabled={saving || !text.trim()}
+      >
         {saving ? 'Saving…' : 'Save JSON'}
       </Button>
       {error && <Alert severity="error">{error}</Alert>}

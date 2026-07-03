@@ -28,9 +28,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       document.pdfPath ?? document.originalPath
     )
     const mime =
-      document.pdfPath != null
-        ? 'application/pdf'
-        : document.originalMimeType
+      document.pdfPath != null ? 'application/pdf' : document.originalMimeType
     const text = await extractText(filePath, mime)
 
     await updateDocument(userId, id, { extractedText: text || null })
@@ -38,9 +36,6 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     return NextResponse.json({ text })
   } catch (error) {
     console.error('[documents analyze GET]', error)
-    return NextResponse.json(
-      { error: 'Analysis failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Analysis failed' }, { status: 500 })
   }
 }

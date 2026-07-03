@@ -6,7 +6,12 @@ export async function overwritePdfWithForm(
   pdfPath: string,
   name: string,
   fields: FormField[],
-  titleStyle?: { fontSize?: number; fontWeight?: 'bold' | 'normal'; color?: string; spacingBelow?: number }
+  titleStyle?: {
+    fontSize?: number
+    fontWeight?: 'bold' | 'normal'
+    color?: string
+    spacingBelow?: number
+  }
 ): Promise<Buffer> {
   const pdfBuffer = await exportFormPdf(name, fields, titleStyle)
   await writeFileBuffer(pdfPath, pdfBuffer)

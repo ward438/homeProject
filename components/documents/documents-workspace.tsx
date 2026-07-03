@@ -45,6 +45,7 @@ export function DocumentsWorkspace() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDocuments()
   }, [loadDocuments])
 

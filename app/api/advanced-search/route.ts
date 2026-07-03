@@ -222,8 +222,7 @@ async function advancedSearchXNGSearch(
     //console.log('SearXNG API URL:', url.toString()) // Log the full URL for debugging
 
     const data:
-      | SearXNGResponse
-      | { error: string; status: number; data: string } =
+      SearXNGResponse | { error: string; status: number; data: string } =
       await fetchJsonWithRetry(url.toString(), 3)
 
     if ('error' in data) {

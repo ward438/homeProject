@@ -5,7 +5,7 @@ export const PAGE_WIDTH = 612
 export const PAGE_HEIGHT = 792
 export const PAGE_MARGIN = 50
 export const COLUMN_GUTTER = 16
-export const COMPACT_COLUMN_GAP = 6   // tighter gap used between checkboxes in an all-checkbox row
+export const COMPACT_COLUMN_GAP = 6 // tighter gap used between checkboxes in an all-checkbox row
 export const CONTENT_TOP = PAGE_HEIGHT - 90
 export const LABEL_SPACE = 16
 export const ROW_GAP = 22
@@ -34,11 +34,15 @@ export function tableBlockHeight(cfg: TableConfig, hasTitle = false): number {
 
 /** Effective height of a field in layout (what drives row height). */
 export function fieldLayoutHeight(field: FormField): number {
-  if (field.type === 'static-text') return field.height || DEFAULT_STATIC_TEXT_HEIGHT
+  if (field.type === 'static-text')
+    return field.height || DEFAULT_STATIC_TEXT_HEIGHT
   if (field.type === 'image') return field.height || DEFAULT_IMAGE_HEIGHT
   if (field.type === 'divider') return field.height || DEFAULT_DIVIDER_HEIGHT
   if (field.type === 'table' && field.tableConfig) {
-    return tableBlockHeight(field.tableConfig, field.tableLabelPosition === 'above')
+    return tableBlockHeight(
+      field.tableConfig,
+      field.tableLabelPosition === 'above'
+    )
   }
   return field.height || 24
 }
@@ -86,7 +90,10 @@ export function isCompactRow(rowFields: FormField[]): boolean {
  *
  * Shared by the PDF export and the builder's page preview so both stay in sync.
  */
-export function applyAutoLayout(fields: FormField[], contentTop = CONTENT_TOP): PositionedField[] {
+export function applyAutoLayout(
+  fields: FormField[],
+  contentTop = CONTENT_TOP
+): PositionedField[] {
   const out: PositionedField[] = fields.map(f => ({ ...f }))
 
   // page -> row number -> indexes into `out`
@@ -108,9 +115,13 @@ export function applyAutoLayout(fields: FormField[], contentTop = CONTENT_TOP): 
   // them sequentially and auto-advance the page when content overflows.
   type RowEntry = { origPage: number; rowNumber: number; indexes: number[] }
   const allRows: RowEntry[] = []
-  for (const [pageNum, rows] of [...pages.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [pageNum, rows] of [...pages.entries()].sort(
+    (a, b) => a[0] - b[0]
+  )) {
     for (const rowNum of [...rows.keys()].sort((a, b) => a - b)) {
-      const indexes = rows.get(rowNum)!.sort((a, b) => (out[a].column ?? 0) - (out[b].column ?? 0))
+      const indexes = rows
+        .get(rowNum)!
+        .sort((a, b) => (out[a].column ?? 0) - (out[b].column ?? 0))
       allRows.push({ origPage: pageNum, rowNumber: rowNum, indexes })
     }
   }
@@ -148,7 +159,10 @@ export function applyAutoLayout(fields: FormField[], contentTop = CONTENT_TOP): 
     const weightDivisor = Math.max(totalWeight, 1)
     const available = Math.max(
       0,
-      PAGE_WIDTH - 2 * PAGE_MARGIN - (indexes.length - 1) * colGutter - totalFixed
+      PAGE_WIDTH -
+        2 * PAGE_MARGIN -
+        (indexes.length - 1) * colGutter -
+        totalFixed
     )
 
     const labelSpace = rowFields.some(needsAboveLabel) ? LABEL_SPACE : 0
@@ -164,7 +178,8 @@ export function applyAutoLayout(fields: FormField[], contentTop = CONTENT_TOP): 
 
     let x = PAGE_MARGIN
     indexes.forEach((i, pos) => {
-      const width = fixedWidths[pos] ?? (available * weights[pos]) / weightDivisor
+      const width =
+        fixedWidths[pos] ?? (available * weights[pos]) / weightDivisor
       out[i].x = x
       out[i].y = fieldY
       out[i].width = width
@@ -175,7 +190,10 @@ export function applyAutoLayout(fields: FormField[], contentTop = CONTENT_TOP): 
       }
       // Sync table height to config so drawTable and layout agree exactly
       if (out[i].type === 'table' && out[i].tableConfig) {
-        out[i].height = tableBlockHeight(out[i].tableConfig!, out[i].tableLabelPosition === 'above')
+        out[i].height = tableBlockHeight(
+          out[i].tableConfig!,
+          out[i].tableLabelPosition === 'above'
+        )
       }
       x += width + colGutter
     })

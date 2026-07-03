@@ -20,10 +20,7 @@ export type DBMessagePartSelect = typeof parts.$inferSelect
 
 // Tool states
 export type ToolState =
-  | 'input-streaming'
-  | 'input-available'
-  | 'output-available'
-  | 'output-error'
+  'input-streaming' | 'input-available' | 'output-available' | 'output-error'
 
 // Dynamic tool type definitions (includes MCP and other runtime tools)
 export type DynamicToolInput = {

@@ -103,6 +103,7 @@ const SidebarProvider = React.forwardRef<
       const cookieState =
         cookieValue !== null ? cookieValue === 'true' : defaultOpen
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       _setOpen(cookieState)
       setIsHydrated(true)
     }, [defaultOpen])

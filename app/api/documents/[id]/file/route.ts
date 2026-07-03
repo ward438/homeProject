@@ -1,7 +1,7 @@
+import { NextRequest, NextResponse } from 'next/server'
+
 import fs from 'fs/promises'
 import path from 'path'
-
-import { NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentUserId } from '@/lib/auth/get-current-user'
 import { getDocumentById } from '@/lib/documents/db'
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
     const relativePath =
       variant === 'original'
         ? document.originalPath
-        : document.pdfPath ?? document.originalPath
+        : (document.pdfPath ?? document.originalPath)
 
     if (!relativePath) {
       return NextResponse.json(
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
             ? 'application/json'
             : 'application/octet-stream'
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `${
@@ -58,9 +58,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
     })
   } catch (error) {
     console.error('[documents file GET]', error)
-    return NextResponse.json(
-      { error: 'Failed to read file' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to read file' }, { status: 500 })
   }
 }

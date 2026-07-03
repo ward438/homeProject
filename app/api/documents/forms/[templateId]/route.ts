@@ -28,7 +28,12 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const body = (await req.json()) as {
       name?: string
       fields?: FormField[]
-      titleStyle?: { fontSize?: number; fontWeight?: 'bold' | 'normal'; color?: string; spacingBelow?: number }
+      titleStyle?: {
+        fontSize?: number
+        fontWeight?: 'bold' | 'normal'
+        color?: string
+        spacingBelow?: number
+      }
     }
 
     const name = body.name?.trim() || template.name
@@ -52,7 +57,12 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       )
     }
 
-    await overwritePdfWithForm(resolveAbsolutePath(document.pdfPath), name, fields, titleStyle)
+    await overwritePdfWithForm(
+      resolveAbsolutePath(document.pdfPath),
+      name,
+      fields,
+      titleStyle
+    )
 
     const updated = await updateFormTemplate(userId, templateId, {
       name,

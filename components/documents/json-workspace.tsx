@@ -74,6 +74,7 @@ export function JsonWorkspace({ documentId, onSaved }: JsonWorkspaceProps) {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setJson(null)
     setSummary(null)
     setError(null)

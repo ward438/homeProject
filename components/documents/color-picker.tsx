@@ -1,9 +1,10 @@
 'use client'
 
+import { useCallback, useEffect, useRef, useState } from 'react'
+
 import Box from '@mui/material/Box'
 import InputBase from '@mui/material/InputBase'
 import Typography from '@mui/material/Typography'
-import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface ColorPickerProps {
   label: string
@@ -18,6 +19,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
 
   // Keep local in sync when the prop changes externally
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocal(value || '#ffffff')
   }, [value])
 
@@ -33,7 +35,9 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', mb: 0.5 }}>
+      <Typography
+        sx={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', mb: 0.5 }}
+      >
         {label}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

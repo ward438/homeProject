@@ -1,6 +1,13 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 
 import AddIcon from '@mui/icons-material/Add'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
@@ -26,20 +33,17 @@ import {
   Typography
 } from '@mui/material'
 
-import { ColorPicker } from '@/components/documents/color-picker'
-import { htmlToPlain, RichTextEditor } from '@/components/documents/rich-text-editor'
 import {
-  checkboxNaturalWidth,
   CHECKBOX_LABEL_GAP,
+  checkboxNaturalWidth,
   COLUMN_GUTTER,
   COMPACT_COLUMN_GAP,
   CONTENT_TOP,
+  DEFAULT_CELL_PADDING,
   DEFAULT_IMAGE_HEIGHT,
   DEFAULT_STATIC_TEXT_HEIGHT,
   DEFAULT_TABLE_HEADER_HEIGHT,
   DEFAULT_TABLE_ROW_HEIGHT,
-  DEFAULT_CELL_PADDING,
-  TABLE_TITLE_HEIGHT,
   fieldLayoutHeight,
   isCompactRow,
   LABEL_SPACE,
@@ -49,10 +53,23 @@ import {
   PAGE_WIDTH,
   ROW_GAP,
   ROW_GAP_COMPACT,
+  TABLE_TITLE_HEIGHT,
   tableBlockHeight
 } from '@/lib/documents/form-layout'
-import type { FormField, FormFieldType, TableConfig, TableRow, TitleStyle } from '@/lib/documents/types'
+import type {
+  FormField,
+  FormFieldType,
+  TableConfig,
+  TableRow,
+  TitleStyle
+} from '@/lib/documents/types'
 import { DEFAULT_TITLE_STYLE } from '@/lib/documents/types'
+
+import { ColorPicker } from '@/components/documents/color-picker'
+import {
+  htmlToPlain,
+  RichTextEditor
+} from '@/components/documents/rich-text-editor'
 
 // ---- mockup design tokens --------------------------------------------------
 
@@ -105,9 +122,7 @@ function PanelHeading({ children }: { children: React.ReactNode }) {
 }
 
 function SectionDivider() {
-  return (
-    <Box sx={{ height: '1px', bgcolor: C.border, my: 1 }} />
-  )
+  return <Box sx={{ height: '1px', bgcolor: C.border, my: 1 }} />
 }
 
 function MockButton({
@@ -185,7 +200,12 @@ const DEFAULT_HEIGHTS: Record<FormFieldType, number> = {
   table: DEFAULT_TABLE_HEADER_HEIGHT + 2 * DEFAULT_TABLE_ROW_HEIGHT
 }
 
-const FILLABLE_TYPES: FormFieldType[] = ['text', 'checkbox', 'dropdown', 'radio']
+const FILLABLE_TYPES: FormFieldType[] = [
+  'text',
+  'checkbox',
+  'dropdown',
+  'radio'
+]
 
 const PALETTE: {
   type: FormFieldType
@@ -193,8 +213,8 @@ const PALETTE: {
   glyph: string
   color: string
   tile: string
-  dragToken?: string          // custom token sent via DRAG_MIME (overrides type)
-  initPatch?: Partial<FormField>  // extra props applied when field is created
+  dragToken?: string // custom token sent via DRAG_MIME (overrides type)
+  initPatch?: Partial<FormField> // extra props applied when field is created
 }[] = [
   {
     type: 'text',
@@ -336,7 +356,10 @@ function makeField(
     y: 0,
     width: 0,
     height: DEFAULT_HEIGHTS[type],
-    options: (type === 'dropdown' || type === 'radio') ? ['Option 1', 'Option 2'] : undefined,
+    options:
+      type === 'dropdown' || type === 'radio'
+        ? ['Option 1', 'Option 2']
+        : undefined,
     content: type === 'static-text' ? 'Text here' : undefined,
     tableConfig: type === 'table' ? defaultTableConfig() : undefined,
     fontSize: type === 'static-text' ? 12 : undefined
@@ -380,15 +403,26 @@ function approxStaticTextHeight(field: FormField): number {
   const padT = field.paddingTop ?? 4
   const padB = field.paddingBottom ?? 4
   // Use stored width if known, otherwise assume full content width minus margins
-  const fw = (field.width && field.width > 0 ? field.width : PAGE_WIDTH - 2 * PAGE_MARGIN) - 8
+  const fw =
+    (field.width && field.width > 0
+      ? field.width
+      : PAGE_WIDTH - 2 * PAGE_MARGIN) - 8
   // Strip HTML tags for a plain-text char count
-  const text = (field.contentHtml || field.content || field.label || '').replace(/<[^>]+>/g, ' ')
+  const text = (
+    field.contentHtml ||
+    field.content ||
+    field.label ||
+    ''
+  ).replace(/<[^>]+>/g, ' ')
   const words = text.split(/\s+/).filter(Boolean)
   let lines = 1
   let lineW = 0
   for (const word of words) {
     const ww = (word.length + 1) * size * 0.578
-    if (lineW + ww > fw && lineW > 0) { lines++; lineW = 0 }
+    if (lineW + ww > fw && lineW > 0) {
+      lines++
+      lineW = 0
+    }
     lineW += ww
   }
   return padT + padB + lines * lineH
@@ -438,11 +472,13 @@ function rebalanceOverflow(fields: FormField[]): {
     cursorY -= spacingBefore
 
     const labelSpace = rowFields.some(f => needsAboveLabel(f)) ? LABEL_SPACE : 0
-    const rowH = Math.max(...rowFields.map(f =>
-      f.type === 'static-text'
-        ? Math.max(fieldLayoutHeight(f), approxStaticTextHeight(f))
-        : fieldLayoutHeight(f)
-    ))
+    const rowH = Math.max(
+      ...rowFields.map(f =>
+        f.type === 'static-text'
+          ? Math.max(fieldLayoutHeight(f), approxStaticTextHeight(f))
+          : fieldLayoutHeight(f)
+      )
+    )
     let fieldY = cursorY - labelSpace - rowH
 
     if (fieldY < PAGE_MARGIN) {
@@ -461,7 +497,10 @@ function rebalanceOverflow(fields: FormField[]): {
     }
 
     const spacingAfter = rowFields[0]?.spacingAfter ?? 0
-    cursorY = fieldY - (isCompactRow(rowFields) ? ROW_GAP_COMPACT : ROW_GAP) - spacingAfter
+    cursorY =
+      fieldY -
+      (isCompactRow(rowFields) ? ROW_GAP_COMPACT : ROW_GAP) -
+      spacingAfter
   }
 
   const maxPage = Math.max(1, ...result.map(f => f.page || 1))
@@ -493,7 +532,14 @@ function TablePreview({ field }: { field: FormField }) {
   const borderColor = cfg.borderColor ?? '#cccccc'
 
   return (
-    <Box sx={{ width: '100%', overflow: 'hidden', border: `0.75px solid ${borderColor}`, boxSizing: 'border-box' }}>
+    <Box
+      sx={{
+        width: '100%',
+        overflow: 'hidden',
+        border: `0.75px solid ${borderColor}`,
+        boxSizing: 'border-box'
+      }}
+    >
       {/* Optional title bar above the column headers */}
       {field.tableLabelPosition === 'above' && field.label && (
         <Box
@@ -551,7 +597,9 @@ function TablePreview({ field }: { field: FormField }) {
         <tbody>
           {cfg.rows.map((row, rowIdx) => {
             const isAlt = rowIdx % 2 === 1
-            const bg = row.bgColor ?? (isAlt && cfg.altRowBg ? cfg.altRowBg : (cfg.rowBg ?? '#ffffff'))
+            const bg =
+              row.bgColor ??
+              (isAlt && cfg.altRowBg ? cfg.altRowBg : (cfg.rowBg ?? '#ffffff'))
             const tc = row.textColor ?? '#1a1a1a'
             const isLastRow = rowIdx === cfg.rows.length - 1
             return (
@@ -569,14 +617,16 @@ function TablePreview({ field }: { field: FormField }) {
                         height: rowH,
                         textAlign: col.align ?? 'left',
                         border: 'none',
-                        borderBottom: isLastRow ? 'none' : `0.3px solid ${borderColor}`,
+                        borderBottom: isLastRow
+                          ? 'none'
+                          : `0.3px solid ${borderColor}`,
                         boxSizing: 'border-box',
                         verticalAlign: 'middle',
                         overflow: 'hidden',
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {(cell?.isField || cfg.allowUserInput) ? (
+                      {cell?.isField || cfg.allowUserInput ? (
                         <Box
                           sx={{
                             height: px(14),
@@ -617,7 +667,10 @@ function TableEditor({
 
   const addColumn = () => {
     const key = `col${Date.now()}`
-    const columns = [...cfg.columns, { key, label: 'New Column', widthWeight: 1 }]
+    const columns = [
+      ...cfg.columns,
+      { key, label: 'New Column', widthWeight: 1 }
+    ]
     const rows = cfg.rows.map(row => ({
       ...row,
       cells: { ...row.cells, [key]: { value: '' } }
@@ -635,7 +688,10 @@ function TableEditor({
     patchCfg({ columns, rows })
   }
 
-  const updateColumn = (key: string, patch: Partial<TableConfig['columns'][0]>) => {
+  const updateColumn = (
+    key: string,
+    patch: Partial<TableConfig['columns'][0]>
+  ) => {
     patchCfg({
       columns: cfg.columns.map(c => (c.key === key ? { ...c, ...patch } : c))
     })
@@ -661,22 +717,33 @@ function TableEditor({
     patchCfg({
       rows: cfg.rows.map(r =>
         r.id === rowId
-          ? { ...r, cells: { ...r.cells, [colKey]: { ...r.cells[colKey], ...patch } } }
+          ? {
+              ...r,
+              cells: { ...r.cells, [colKey]: { ...r.cells[colKey], ...patch } }
+            }
           : r
       )
     })
   }
 
   const updateRow = (rowId: string, patch: Partial<TableRow>) => {
-    patchCfg({ rows: cfg.rows.map(r => (r.id === rowId ? { ...r, ...patch } : r)) })
+    patchCfg({
+      rows: cfg.rows.map(r => (r.id === rowId ? { ...r, ...patch } : r))
+    })
   }
 
   return (
     <Stack sx={{ gap: 1.5 }}>
       <PanelHeading>Table columns</PanelHeading>
       {cfg.columns.map(col => (
-        <Box key={col.key} sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}>
-          <Stack direction="row" sx={{ gap: 0.75, alignItems: 'center', mb: 0.75 }}>
+        <Box
+          key={col.key}
+          sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}
+        >
+          <Stack
+            direction="row"
+            sx={{ gap: 0.75, alignItems: 'center', mb: 0.75 }}
+          >
             <Typography sx={{ fontSize: 11, color: C.muted, flex: 1 }}>
               Width weight:
             </Typography>
@@ -684,9 +751,19 @@ function TableEditor({
               size="small"
               type="number"
               value={col.widthWeight ?? 1}
-              onChange={e => updateColumn(col.key, { widthWeight: Number(e.target.value) || 1 })}
+              onChange={e =>
+                updateColumn(col.key, {
+                  widthWeight: Number(e.target.value) || 1
+                })
+              }
               sx={{ width: 52, ...darkInputSx }}
-              slotProps={{ htmlInput: { min: 0.1, step: 0.1, style: { textAlign: 'center' } } }}
+              slotProps={{
+                htmlInput: {
+                  min: 0.1,
+                  step: 0.1,
+                  style: { textAlign: 'center' }
+                }
+              }}
             />
             <IconButton
               size="small"
@@ -699,9 +776,15 @@ function TableEditor({
           <RichTextEditor
             label="Column header"
             placeholder="Column label…"
-            html={col.labelHtml ?? (col.label ? `<p><strong>${col.label}</strong></p>` : '')}
+            html={
+              col.labelHtml ??
+              (col.label ? `<p><strong>${col.label}</strong></p>` : '')
+            }
             onChange={(html, plain) =>
-              updateColumn(col.key, { labelHtml: html, label: plain || col.label })
+              updateColumn(col.key, {
+                labelHtml: html,
+                label: plain || col.label
+              })
             }
           />
           <Stack direction="row" sx={{ gap: 1, mt: 0.75 }}>
@@ -729,9 +812,21 @@ function TableEditor({
       <SectionDivider />
       <PanelHeading>Table rows</PanelHeading>
       {cfg.rows.map((row, rowIdx) => (
-        <Box key={row.id} sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}>
-          <Stack direction="row" sx={{ alignItems: 'center', mb: 0.75, justifyContent: 'space-between' }}>
-            <Typography sx={{ fontSize: 11, color: C.muted }}>Row {rowIdx + 1}</Typography>
+        <Box
+          key={row.id}
+          sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}
+        >
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: 'center',
+              mb: 0.75,
+              justifyContent: 'space-between'
+            }}
+          >
+            <Typography sx={{ fontSize: 11, color: C.muted }}>
+              Row {rowIdx + 1}
+            </Typography>
             <IconButton
               size="small"
               onClick={() => removeRow(row.id)}
@@ -743,27 +838,53 @@ function TableEditor({
           {cfg.columns.map(col => {
             const cell = row.cells[col.key] ?? { value: '' }
             return (
-              <Stack key={col.key} direction="row" sx={{ gap: 0.5, mb: 0.5, alignItems: 'center' }}>
-                <Typography sx={{ fontSize: 10, color: C.muted, width: 55, flexShrink: 0 }} noWrap>
+              <Stack
+                key={col.key}
+                direction="row"
+                sx={{ gap: 0.5, mb: 0.5, alignItems: 'center' }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 10,
+                    color: C.muted,
+                    width: 55,
+                    flexShrink: 0
+                  }}
+                  noWrap
+                >
                   {col.label}
                 </Typography>
                 <TextField
                   size="small"
                   value={cell.value}
-                  onChange={e => updateCell(row.id, col.key, { value: e.target.value })}
+                  onChange={e =>
+                    updateCell(row.id, col.key, { value: e.target.value })
+                  }
                   sx={{ flex: 1, ...darkInputSx }}
-                  slotProps={{ htmlInput: { style: { fontSize: 11, padding: '3px 6px' } } }}
+                  slotProps={{
+                    htmlInput: { style: { fontSize: 11, padding: '3px 6px' } }
+                  }}
                 />
-                <Tooltip title={cell.isField ? 'Fillable (click to toggle)' : 'Static (click to toggle)'}>
+                <Tooltip
+                  title={
+                    cell.isField
+                      ? 'Fillable (click to toggle)'
+                      : 'Static (click to toggle)'
+                  }
+                >
                   <ButtonBase
-                    onClick={() => updateCell(row.id, col.key, { isField: !cell.isField })}
+                    onClick={() =>
+                      updateCell(row.id, col.key, { isField: !cell.isField })
+                    }
                     sx={{
                       fontSize: 10,
                       px: 0.75,
                       py: 0.4,
                       borderRadius: '4px',
                       border: `1px solid ${C.border}`,
-                      bgcolor: cell.isField ? 'rgba(108,158,255,0.2)' : 'transparent',
+                      bgcolor: cell.isField
+                        ? 'rgba(108,158,255,0.2)'
+                        : 'transparent',
                       color: cell.isField ? C.accent : C.muted,
                       flexShrink: 0
                     }}
@@ -801,15 +922,24 @@ function TableEditor({
       <PanelHeading>Table appearance</PanelHeading>
 
       {/* Global row-input toggle */}
-      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography sx={{ fontSize: 12, color: C.text }}>Allow row input</Typography>
+      <Stack
+        direction="row"
+        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+      >
+        <Typography sx={{ fontSize: 12, color: C.text }}>
+          Allow row input
+        </Typography>
         <Switch
           size="small"
           checked={cfg.allowUserInput ?? false}
           onChange={e => patchCfg({ allowUserInput: e.target.checked })}
           sx={{
-            '& .MuiSwitch-thumb': { bgcolor: cfg.allowUserInput ? C.accent : C.muted },
-            '& .MuiSwitch-track': { bgcolor: cfg.allowUserInput ? `${C.accent}55` : `${C.border}` }
+            '& .MuiSwitch-thumb': {
+              bgcolor: cfg.allowUserInput ? C.accent : C.muted
+            },
+            '& .MuiSwitch-track': {
+              bgcolor: cfg.allowUserInput ? `${C.accent}55` : `${C.border}`
+            }
           }}
         />
       </Stack>
@@ -867,7 +997,10 @@ function TableEditor({
 
 // ---- component ---------------------------------------------------------------
 
-export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) {
+export function FormBuilder({
+  sourceDocumentId,
+  onExported
+}: FormBuilderProps) {
   const [templateId, setTemplateId] = useState<string | null>(null)
   const [formName, setFormName] = useState('My Form')
   const [titleStyle, setTitleStyle] = useState<TitleStyle>(DEFAULT_TITLE_STYLE)
@@ -883,7 +1016,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showTableEditor, setShowTableEditor] = useState(false)
-  const [deleteConfirmPage, setDeleteConfirmPage] = useState<number | null>(null)
+  const [deleteConfirmPage, setDeleteConfirmPage] = useState<number | null>(
+    null
+  )
   const imageInputRef = useRef<HTMLInputElement>(null)
   const canvasRef = useRef<HTMLDivElement>(null)
   // Free-drag state for absolutely-positioned image fields
@@ -919,7 +1054,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
         setFormName(data.template.name)
         const tpl = data.template as any
         if (tpl.titleStyle) setTitleStyle(tpl.titleStyle as TitleStyle)
-        else if (tpl.config?.titleStyle) setTitleStyle(tpl.config.titleStyle as TitleStyle)
+        else if (tpl.config?.titleStyle)
+          setTitleStyle(tpl.config.titleStyle as TitleStyle)
         setFields(migrated)
         setPageCount(Math.max(1, ...migrated.map(f => f.page || 1)))
       } else {
@@ -936,6 +1072,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   }, [sourceDocumentId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTemplate()
   }, [loadTemplate])
 
@@ -990,6 +1127,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     const { changed, fields: rebalanced, maxPage } = rebalanceOverflow(base)
 
     if (heightsChanged || changed) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFields(rebalanced)
       setPageCount(c => Math.max(c, maxPage))
     }
@@ -1003,7 +1141,10 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
         .filter(f => (f.page || 1) === page && f.row)
         .map(f => f.row!)
       const maxRow = pageRows.length ? Math.max(...pageRows) : 0
-      const field = { ...makeField(type, page, maxRow + 1, 1), ...(patch ?? {}) }
+      const field = {
+        ...makeField(type, page, maxRow + 1, 1),
+        ...(patch ?? {})
+      }
       setSelectedId(field.id)
       return normalize([...current, field])
     })
@@ -1114,7 +1255,15 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     if (moveId) return { kind: 'move', id: moveId }
     const raw = e.dataTransfer.getData(DRAG_MIME)
     if (raw === 'radio-single') {
-      return { kind: 'new', type: 'radio', patch: { options: [''], optionStyles: [{}], height: DEFAULT_HEIGHTS['checkbox'] } }
+      return {
+        kind: 'new',
+        type: 'radio',
+        patch: {
+          options: [''],
+          optionStyles: [{}],
+          height: DEFAULT_HEIGHTS['checkbox']
+        }
+      }
     }
     const t = raw as FormFieldType
     if (
@@ -1139,8 +1288,13 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     if (!payload) return
     if (payload.kind === 'new') {
       setFields(current => {
-        const cols = current.filter(f => (f.page || 1) === page && f.row === rowNumber).length
-        const field = { ...makeField(payload.type, page, rowNumber, cols + 1), ...(payload.patch ?? {}) }
+        const cols = current.filter(
+          f => (f.page || 1) === page && f.row === rowNumber
+        ).length
+        const field = {
+          ...makeField(payload.type, page, rowNumber, cols + 1),
+          ...(payload.patch ?? {})
+        }
         setSelectedId(field.id)
         return normalize([...current, field])
       })
@@ -1155,9 +1309,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     if (payload.kind === 'new') {
       setFields(current => {
         const shifted = current.map(f =>
-          (f.page || 1) === page && f.row && f.row >= beforeRow ? { ...f, row: f.row + 1 } : f
+          (f.page || 1) === page && f.row && f.row >= beforeRow
+            ? { ...f, row: f.row + 1 }
+            : f
         )
-        const field = { ...makeField(payload.type, page, beforeRow, 1), ...(payload.patch ?? {}) }
+        const field = {
+          ...makeField(payload.type, page, beforeRow, 1),
+          ...(payload.patch ?? {})
+        }
         setSelectedId(field.id)
         return normalize([...shifted, field])
       })
@@ -1171,9 +1330,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
     if (!payload) return
     if (payload.kind === 'new') {
       setFields(current => {
-        const pageRows = current.filter(f => (f.page || 1) === page && f.row).map(f => f.row!)
+        const pageRows = current
+          .filter(f => (f.page || 1) === page && f.row)
+          .map(f => f.row!)
         const maxRow = pageRows.length ? Math.max(...pageRows) : 0
-        const field = { ...makeField(payload.type, page, maxRow + 1, 1), ...(payload.patch ?? {}) }
+        const field = {
+          ...makeField(payload.type, page, maxRow + 1, 1),
+          ...(payload.patch ?? {})
+        }
         setSelectedId(field.id)
         return normalize([...current, field])
       })
@@ -1183,10 +1347,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   // ---- free-position drag (image fields without a row) --------------------
 
   // PAGE_WIDTH/HEIGHT in PDF pts; SCALE converts to canvas px
-  const startFreeDrag = (
-    e: React.MouseEvent,
-    field: FormField
-  ) => {
+  const startFreeDrag = (e: React.MouseEvent, field: FormField) => {
     e.preventDefault()
     e.stopPropagation()
     setSelectedId(field.id)
@@ -1206,7 +1367,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
       const newX = Math.max(0, drag.startFieldX + dxPt)
       const newY = Math.max(0, drag.startFieldY + dyPt)
       setFields(current =>
-        current.map(f => f.id === drag.fieldId ? { ...f, x: newX, y: newY } : f)
+        current.map(f =>
+          f.id === drag.fieldId ? { ...f, x: newX, y: newY } : f
+        )
       )
     }
 
@@ -1263,7 +1426,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   // ---- row's first-column field (holds row-level props) -------------------
   const getRowFirst = (rowNumber: number) =>
     fields.find(
-      f => (f.page || 1) === page && f.row === rowNumber && (f.column ?? 1) === 1
+      f =>
+        (f.page || 1) === page && f.row === rowNumber && (f.column ?? 1) === 1
     )
 
   // ---- render -------------------------------------------------------------
@@ -1303,14 +1467,20 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
         <Box sx={{ width: '1px', height: 22, bgcolor: C.border, mx: 0.75 }} />
 
         {Array.from({ length: pageCount }, (_, i) => (
-          <Box key={i + 1} sx={{ display: 'inline-flex', alignItems: 'center', gap: 0 }}>
+          <Box
+            key={i + 1}
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0 }}
+          >
             <MockButton
               primary={page === i + 1}
               onClick={() => {
                 setPage(i + 1)
                 setSelectedId(null)
               }}
-              sx={{ borderTopRightRadius: i > 0 ? 0 : undefined, borderBottomRightRadius: i > 0 ? 0 : undefined }}
+              sx={{
+                borderTopRightRadius: i > 0 ? 0 : undefined,
+                borderBottomRightRadius: i > 0 ? 0 : undefined
+              }}
             >
               Page {i + 1}
             </MockButton>
@@ -1395,7 +1565,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               <PaletteItem key={item.label} item={item} onAdd={addToNewRow} />
             ))}
           </Stack>
-          <Typography sx={{ fontSize: 11, color: C.muted, mt: 1.5, lineHeight: 1.5 }}>
+          <Typography
+            sx={{ fontSize: 11, color: C.muted, mt: 1.5, lineHeight: 1.5 }}
+          >
             Drag onto the page or click to add. Drop onto an existing row to add
             a column. Drag placed fields to rearrange them.
           </Typography>
@@ -1430,17 +1602,27 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               pb: 3
             }}
           >
-            <Box sx={{ position: 'absolute', top: px(24), left: px(PAGE_MARGIN) }}>
-              <Typography sx={{
-                fontSize: px(titleStyle.fontSize),
-                fontWeight: titleStyle.fontWeight === 'bold' ? 700 : 400,
-                color: titleStyle.color
-              }}>
+            <Box
+              sx={{ position: 'absolute', top: px(24), left: px(PAGE_MARGIN) }}
+            >
+              <Typography
+                sx={{
+                  fontSize: px(titleStyle.fontSize),
+                  fontWeight: titleStyle.fontWeight === 'bold' ? 700 : 400,
+                  color: titleStyle.color
+                }}
+              >
                 {formName || 'Untitled form'}
               </Typography>
             </Box>
             {pageCount > 1 && (
-              <Box sx={{ position: 'absolute', bottom: px(16), right: px(PAGE_MARGIN) }}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: px(16),
+                  right: px(PAGE_MARGIN)
+                }}
+              >
                 <Typography sx={{ fontSize: px(9), color: '#aaa' }}>
                   Page {page} of {pageCount}
                 </Typography>
@@ -1456,7 +1638,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                 right: 0,
                 borderTop: '1px dashed rgba(220, 80, 80, 0.45)',
                 pointerEvents: 'none',
-                zIndex: 10,
+                zIndex: 10
               }}
             />
 
@@ -1486,7 +1668,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                 0,
                 PAGE_WIDTH -
                   2 * PAGE_MARGIN -
-                  (row.fields.length - 1) * (rowIsCompact ? COMPACT_COLUMN_GAP : COLUMN_GUTTER) -
+                  (row.fields.length - 1) *
+                    (rowIsCompact ? COMPACT_COLUMN_GAP : COLUMN_GUTTER) -
                   fixedTotalPt
               )
               const prevRow = rowIdx > 0 ? rows[rowIdx - 1] : null
@@ -1575,12 +1758,15 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                           onClick={e => {
                             e.stopPropagation()
                             setSelectedId(field.id)
-                            if (field.type === 'table') setShowTableEditor(false)
+                            if (field.type === 'table')
+                              setShowTableEditor(false)
                           }}
                           sx={{
                             flex: '0 0 auto',
                             width:
-                              field.type === 'checkbox' ? 'max-content' : fieldWidth,
+                              field.type === 'checkbox'
+                                ? 'max-content'
+                                : fieldWidth,
                             minWidth:
                               field.type === 'checkbox'
                                 ? px(checkboxNaturalWidth(field))
@@ -1676,7 +1862,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               onDragLeave={() => setDropNewRow(false)}
               onDrop={onDropNewRow}
               sx={{
-                border: dropNewRow ? `2px dashed ${C.accent}` : '1px dashed #bbb',
+                border: dropNewRow
+                  ? `2px dashed ${C.accent}`
+                  : '1px dashed #bbb',
                 color: dropNewRow ? C.accent : '#888',
                 borderRadius: '4px',
                 textAlign: 'center',
@@ -1695,24 +1883,31 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               .filter(f => (f.page || 1) === page && !f.row)
               .map(field => {
                 const fieldH = field.height || DEFAULT_HEIGHTS[field.type]
-                const fieldW = field.width || (
-                  field.type === 'checkbox'
+                const fieldW =
+                  field.width ||
+                  (field.type === 'checkbox'
                     ? checkboxNaturalWidth(field)
-                    : PAGE_WIDTH - 2 * PAGE_MARGIN
-                )
+                    : PAGE_WIDTH - 2 * PAGE_MARGIN)
                 return (
                   <Box
                     key={field.id}
                     onMouseDown={e => startFreeDrag(e, field)}
-                    onClick={e => { e.stopPropagation(); setSelectedId(field.id) }}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setSelectedId(field.id)
+                    }}
                     sx={{
                       position: 'absolute',
                       left: px(field.x),
                       top: px(PAGE_HEIGHT - field.y - fieldH),
-                      width: field.type === 'checkbox' ? 'max-content' : px(fieldW),
+                      width:
+                        field.type === 'checkbox' ? 'max-content' : px(fieldW),
                       minWidth: px(fieldW),
                       cursor: 'move',
-                      outline: selectedId === field.id ? `2px solid ${C.accent}` : '1px dashed rgba(0,0,0,0.2)',
+                      outline:
+                        selectedId === field.id
+                          ? `2px solid ${C.accent}`
+                          : '1px dashed rgba(0,0,0,0.2)',
                       outlineOffset: 2,
                       userSelect: 'none',
                       '& *': { pointerEvents: 'none' }
@@ -1725,8 +1920,7 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     />
                   </Box>
                 )
-              })
-            }
+              })}
           </Box>
         </Box>
 
@@ -1744,26 +1938,46 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
           }}
         >
           {/* Selected field type badge + label — always visible at top of inspector */}
-          {selected ? (() => {
-            const palItem = PALETTE.find(p => p.type === selected.type)
-            return (
-              <Box sx={{ mb: 2, pb: 1.5, borderBottom: `1px solid ${C.border}` }}>
-                <Box sx={{
-                  display: 'inline-flex', alignItems: 'center', gap: 0.5,
-                  px: 1, py: 0.3, borderRadius: '4px',
-                  bgcolor: palItem?.tile ?? 'rgba(255,255,255,0.08)',
-                  color: palItem?.color ?? C.text,
-                  fontSize: 10, fontWeight: 800, letterSpacing: '1.2px',
-                  textTransform: 'uppercase', mb: 0.75
-                }}>
-                  {palItem?.glyph} {palItem?.label ?? selected.type}
+          {selected ? (
+            (() => {
+              const palItem = PALETTE.find(p => p.type === selected.type)
+              return (
+                <Box
+                  sx={{ mb: 2, pb: 1.5, borderBottom: `1px solid ${C.border}` }}
+                >
+                  <Box
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      px: 1,
+                      py: 0.3,
+                      borderRadius: '4px',
+                      bgcolor: palItem?.tile ?? 'rgba(255,255,255,0.08)',
+                      color: palItem?.color ?? C.text,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: '1.2px',
+                      textTransform: 'uppercase',
+                      mb: 0.75
+                    }}
+                  >
+                    {palItem?.glyph} {palItem?.label ?? selected.type}
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: C.text,
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {selected.label || '(unnamed field)'}
+                  </Typography>
                 </Box>
-                <Typography sx={{ fontSize: 13, fontWeight: 600, color: C.text, lineHeight: 1.3 }}>
-                  {selected.label || '(unnamed field)'}
-                </Typography>
-              </Box>
-            )
-          })() : (
+              )
+            })()
+          ) : (
             <PanelHeading>Title Style</PanelHeading>
           )}
 
@@ -1775,7 +1989,12 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   size="small"
                   type="number"
                   value={titleStyle.fontSize}
-                  onChange={e => setTitleStyle(s => ({ ...s, fontSize: Number(e.target.value) || 16 }))}
+                  onChange={e =>
+                    setTitleStyle(s => ({
+                      ...s,
+                      fontSize: Number(e.target.value) || 16
+                    }))
+                  }
                   sx={{ flex: 1, ...darkInputSx }}
                   slotProps={{ htmlInput: { min: 8, max: 48, step: 1 } }}
                 />
@@ -1783,13 +2002,22 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   {(['bold', 'normal'] as const).map(w => (
                     <ButtonBase
                       key={w}
-                      onClick={() => setTitleStyle(s => ({ ...s, fontWeight: w }))}
+                      onClick={() =>
+                        setTitleStyle(s => ({ ...s, fontWeight: w }))
+                      }
                       sx={{
-                        width: 36, height: 36, borderRadius: '6px',
+                        width: 36,
+                        height: 36,
+                        borderRadius: '6px',
                         border: `1px solid ${C.border}`,
-                        bgcolor: titleStyle.fontWeight === w ? C.accent : 'transparent',
-                        color: titleStyle.fontWeight === w ? C.accentText : C.muted,
-                        fontWeight: w === 'bold' ? 700 : 400, fontSize: 13
+                        bgcolor:
+                          titleStyle.fontWeight === w
+                            ? C.accent
+                            : 'transparent',
+                        color:
+                          titleStyle.fontWeight === w ? C.accentText : C.muted,
+                        fontWeight: w === 'bold' ? 700 : 400,
+                        fontSize: 13
                       }}
                     >
                       {w === 'bold' ? 'B' : 'N'}
@@ -1807,14 +2035,22 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                 size="small"
                 type="number"
                 value={titleStyle.spacingBelow}
-                onChange={e => setTitleStyle(s => ({ ...s, spacingBelow: Number(e.target.value) || 0 }))}
+                onChange={e =>
+                  setTitleStyle(s => ({
+                    ...s,
+                    spacingBelow: Number(e.target.value) || 0
+                  }))
+                }
                 sx={{ ...darkInputSx }}
                 slotProps={{ htmlInput: { min: -200, max: 200, step: 4 } }}
               />
             </Stack>
           ) : selected.type === 'table' && showTableEditor ? (
             <>
-              <MockButton onClick={() => setShowTableEditor(false)} sx={{ mb: 1.5, fontSize: 12, py: 0.6 }}>
+              <MockButton
+                onClick={() => setShowTableEditor(false)}
+                sx={{ mb: 1.5, fontSize: 12, py: 0.6 }}
+              >
                 ← Back to field
               </MockButton>
               <TableEditor field={selected} updateField={updateField} />
@@ -1827,27 +2063,49 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   label="Content"
                   multiline
                   placeholder="Enter static text…"
-                  html={selected.contentHtml ?? (selected.content ? `<p>${selected.content}</p>` : '')}
+                  html={
+                    selected.contentHtml ??
+                    (selected.content ? `<p>${selected.content}</p>` : '')
+                  }
                   onChange={(html, plain) =>
-                    updateField(selected.id, { contentHtml: html, content: plain })
+                    updateField(selected.id, {
+                      contentHtml: html,
+                      content: plain
+                    })
                   }
                 />
               ) : selected.type !== 'table' ? (
                 <RichTextEditor
                   label="Label"
                   placeholder="Field label…"
-                  html={selected.labelHtml ?? (selected.label ? `<p><strong>${selected.label}</strong></p>` : '')}
+                  html={
+                    selected.labelHtml ??
+                    (selected.label
+                      ? `<p><strong>${selected.label}</strong></p>`
+                      : '')
+                  }
                   onChange={(html, plain) =>
-                    updateField(selected.id, { labelHtml: html, label: plain || selected.label })
+                    updateField(selected.id, {
+                      labelHtml: html,
+                      label: plain || selected.label
+                    })
                   }
                 />
               ) : (
                 <RichTextEditor
                   label="Table title / label"
                   placeholder="Table label…"
-                  html={selected.labelHtml ?? (selected.label ? `<p><strong>${selected.label}</strong></p>` : '')}
+                  html={
+                    selected.labelHtml ??
+                    (selected.label
+                      ? `<p><strong>${selected.label}</strong></p>`
+                      : '')
+                  }
                   onChange={(html, plain) =>
-                    updateField(selected.id, { labelHtml: html, label: plain || selected.label })
+                    updateField(selected.id, {
+                      labelHtml: html,
+                      label: plain || selected.label
+                    })
                   }
                 />
               )}
@@ -1855,7 +2113,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               {/* Type indicator for non-fillable */}
               {!FILLABLE_TYPES.includes(selected.type) ? (
                 <Typography sx={{ fontSize: 11.5, color: C.muted }}>
-                  Type: <strong style={{ color: C.text }}>{selected.type}</strong>
+                  Type:{' '}
+                  <strong style={{ color: C.text }}>{selected.type}</strong>
                 </Typography>
               ) : (
                 /* Type segmented control for fillable */
@@ -1871,39 +2130,44 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       overflow: 'hidden'
                     }}
                   >
-                    {(['text', 'checkbox', 'dropdown', 'radio'] as const).map(type => (
-                      <ButtonBase
-                        key={type}
-                        onClick={() =>
-                          updateField(selected.id, {
-                            type,
-                            height: DEFAULT_HEIGHTS[type],
-                            options:
-                              (type === 'dropdown' || type === 'radio')
-                                ? (selected.options ?? ['Option 1', 'Option 2'])
-                                : undefined
-                          })
-                        }
-                        sx={{
-                          flex: 1,
-                          fontSize: 11.5,
-                          py: 0.9,
-                          fontWeight: selected.type === type ? 700 : 400,
-                          bgcolor:
-                            selected.type === type ? C.accent : 'transparent',
-                          color:
-                            selected.type === type ? C.accentText : C.muted
-                        }}
-                      >
-                        {type === 'text'
-                          ? 'Text'
-                          : type === 'checkbox'
-                            ? 'Check'
-                            : type === 'dropdown'
-                              ? 'Drop'
-                              : 'Radio'}
-                      </ButtonBase>
-                    ))}
+                    {(['text', 'checkbox', 'dropdown', 'radio'] as const).map(
+                      type => (
+                        <ButtonBase
+                          key={type}
+                          onClick={() =>
+                            updateField(selected.id, {
+                              type,
+                              height: DEFAULT_HEIGHTS[type],
+                              options:
+                                type === 'dropdown' || type === 'radio'
+                                  ? (selected.options ?? [
+                                      'Option 1',
+                                      'Option 2'
+                                    ])
+                                  : undefined
+                            })
+                          }
+                          sx={{
+                            flex: 1,
+                            fontSize: 11.5,
+                            py: 0.9,
+                            fontWeight: selected.type === type ? 700 : 400,
+                            bgcolor:
+                              selected.type === type ? C.accent : 'transparent',
+                            color:
+                              selected.type === type ? C.accentText : C.muted
+                          }}
+                        >
+                          {type === 'text'
+                            ? 'Text'
+                            : type === 'checkbox'
+                              ? 'Check'
+                              : type === 'dropdown'
+                                ? 'Drop'
+                                : 'Radio'}
+                        </ButtonBase>
+                      )
+                    )}
                   </Stack>
                 </Box>
               )}
@@ -1916,18 +2180,27 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   </Typography>
                   <Stack
                     direction="row"
-                    sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', overflow: 'hidden' }}
+                    sx={{
+                      border: `1px solid ${C.border}`,
+                      borderRadius: '6px',
+                      overflow: 'hidden'
+                    }}
                   >
                     {(['grid', 'free'] as const).map(mode => {
-                      const active = mode === 'free' ? !selected.row : !!selected.row
+                      const active =
+                        mode === 'free' ? !selected.row : !!selected.row
                       return (
                         <ButtonBase
                           key={mode}
                           onClick={() => {
                             if (mode === 'free') {
                               setFields(current => {
-                                const rest = normalize(current.filter(f => f.id !== selected.id))
-                                const fieldH = selected.height || DEFAULT_HEIGHTS[selected.type]
+                                const rest = normalize(
+                                  current.filter(f => f.id !== selected.id)
+                                )
+                                const fieldH =
+                                  selected.height ||
+                                  DEFAULT_HEIGHTS[selected.type]
                                 const fieldW =
                                   selected.type === 'checkbox'
                                     ? checkboxNaturalWidth(selected)
@@ -1951,11 +2224,18 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                                 const pageRows = current
                                   .filter(f => (f.page || 1) === page && f.row)
                                   .map(f => f.row!)
-                                const maxRow = pageRows.length ? Math.max(...pageRows) : 0
+                                const maxRow = pageRows.length
+                                  ? Math.max(...pageRows)
+                                  : 0
                                 return normalize(
                                   current.map(f =>
                                     f.id === selected.id
-                                      ? { ...f, row: maxRow + 1, column: 1, page }
+                                      ? {
+                                          ...f,
+                                          row: maxRow + 1,
+                                          column: 1,
+                                          page
+                                        }
                                       : f
                                   )
                                 )
@@ -1963,7 +2243,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                             }
                           }}
                           sx={{
-                            flex: 1, fontSize: 11.5, py: 0.9,
+                            flex: 1,
+                            fontSize: 11.5,
+                            py: 0.9,
                             fontWeight: active ? 700 : 400,
                             bgcolor: active ? C.accent : 'transparent',
                             color: active ? C.accentText : C.muted
@@ -1975,7 +2257,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     })}
                   </Stack>
                   {!selected.row && (
-                    <Typography sx={{ fontSize: 11, color: C.muted, mt: 0.5, lineHeight: 1.4 }}>
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        color: C.muted,
+                        mt: 0.5,
+                        lineHeight: 1.4
+                      }}
+                    >
                       Drag the field on the canvas to position it freely.
                     </Typography>
                   )}
@@ -2003,7 +2292,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                         <ButtonBase
                           key={position}
                           onClick={() =>
-                            updateField(selected.id, { labelPosition: position })
+                            updateField(selected.id, {
+                              labelPosition: position
+                            })
                           }
                           sx={{
                             flex: 1,
@@ -2037,7 +2328,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     min={0.1}
                     max={3}
                     step={0.05}
-                    value={selected.span && selected.span > 0 ? selected.span : 1}
+                    value={
+                      selected.span && selected.span > 0 ? selected.span : 1
+                    }
                     onChange={(_, value) =>
                       updateField(selected.id, { span: value as number })
                     }
@@ -2068,7 +2361,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   value={selected.height}
                   onChange={e =>
                     updateField(selected.id, {
-                      height: Number(e.target.value) || DEFAULT_HEIGHTS[selected.type]
+                      height:
+                        Number(e.target.value) || DEFAULT_HEIGHTS[selected.type]
                     })
                   }
                   sx={darkInputSx}
@@ -2084,134 +2378,232 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       placeholder="Select..."
                       value={selected.dropdownPlaceholder ?? ''}
-                      onChange={e => updateField(selected.id, { dropdownPlaceholder: e.target.value || undefined })}
-                      sx={{ ...darkInputSx, mb: 1 }}
-                    />
-                  )}
-                  {selected.type === 'radio' && (selected.options ?? []).length > 1 && (
-                    <TextField
-                      label="Columns"
-                      size="small"
-                      type="number"
-                      value={selected.radioColumns ?? 1}
-                      onChange={e => updateField(selected.id, { radioColumns: Math.max(1, Number(e.target.value) || 1) })}
-                      sx={{ ...darkInputSx, mb: 1 }}
-                      slotProps={{ htmlInput: { min: 1, max: 6, step: 1 } }}
-                    />
-                  )}
-                  <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>Options</Typography>
-                  <Stack spacing={0.5}>
-                    {(selected.options ?? ['Option 1', 'Option 2']).map((opt, idx) => {
-                      const isRadio = selected.type === 'radio'
-                      const style = (selected.optionStyles ?? [])[idx] ?? {}
-                      const updateStyle = (patch: Partial<typeof style>) => {
-                        setFields(cur => cur.map(f => {
-                          if (f.id !== selected.id) return f
-                          const existing = f.optionStyles ?? []
-                          const opts     = f.options ?? []
-                          const next     = opts.map((_, i) => ({ ...(existing[i] ?? {}) }))
-                          next[idx]      = { ...next[idx], ...patch }
-                          return { ...f, optionStyles: next }
-                        }))
+                      onChange={e =>
+                        updateField(selected.id, {
+                          dropdownPlaceholder: e.target.value || undefined
+                        })
                       }
-                      const isBold   = style.fontWeight === 'bold'
-                      const isItalic = style.fontStyle  === 'italic'
-                      return (
-                        <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <TextField
-                            size="small"
-                            placeholder={`Option ${idx + 1}`}
-                            value={opt}
-                            onChange={e => {
-                              const next = [...(selected.options ?? [])]
-                              next[idx] = e.target.value
-                              updateField(selected.id, { options: next })
+                      sx={{ ...darkInputSx, mb: 1 }}
+                    />
+                  )}
+                  {selected.type === 'radio' &&
+                    (selected.options ?? []).length > 1 && (
+                      <TextField
+                        label="Columns"
+                        size="small"
+                        type="number"
+                        value={selected.radioColumns ?? 1}
+                        onChange={e =>
+                          updateField(selected.id, {
+                            radioColumns: Math.max(
+                              1,
+                              Number(e.target.value) || 1
+                            )
+                          })
+                        }
+                        sx={{ ...darkInputSx, mb: 1 }}
+                        slotProps={{ htmlInput: { min: 1, max: 6, step: 1 } }}
+                      />
+                    )}
+                  <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>
+                    Options
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    {(selected.options ?? ['Option 1', 'Option 2']).map(
+                      (opt, idx) => {
+                        const isRadio = selected.type === 'radio'
+                        const style = (selected.optionStyles ?? [])[idx] ?? {}
+                        const updateStyle = (patch: Partial<typeof style>) => {
+                          setFields(cur =>
+                            cur.map(f => {
+                              if (f.id !== selected.id) return f
+                              const existing = f.optionStyles ?? []
+                              const opts = f.options ?? []
+                              const next = opts.map((_, i) => ({
+                                ...(existing[i] ?? {})
+                              }))
+                              next[idx] = { ...next[idx], ...patch }
+                              return { ...f, optionStyles: next }
+                            })
+                          )
+                        }
+                        const isBold = style.fontWeight === 'bold'
+                        const isItalic = style.fontStyle === 'italic'
+                        return (
+                          <Box
+                            key={idx}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5
                             }}
-                            sx={{ ...darkInputSx, flex: 1, minWidth: 0 }}
-                          />
-                          {/* Radio-only: font size, B/I, color */}
-                          {isRadio && (
-                            <>
-                              <TextField
-                                size="small"
-                                type="number"
-                                value={style.fontSize ?? ''}
-                                placeholder="sz"
-                                onChange={e => updateStyle({ fontSize: Number(e.target.value) || undefined })}
-                                slotProps={{ htmlInput: { min: 6, max: 72, step: 1 } }}
-                                sx={{ ...darkInputSx, width: 38, '& input': { px: '4px', py: '4px', textAlign: 'center', fontSize: 11 } }}
-                              />
-                              {(['bold', 'italic'] as const).map(s => {
-                                const active = s === 'bold' ? isBold : isItalic
-                                return (
-                                  <ButtonBase
-                                    key={s}
-                                    onClick={() => updateStyle(
-                                      s === 'bold'
-                                        ? { fontWeight: active ? 'normal' : 'bold' }
-                                        : { fontStyle: active ? 'normal' : 'italic' }
-                                    )}
+                          >
+                            <TextField
+                              size="small"
+                              placeholder={`Option ${idx + 1}`}
+                              value={opt}
+                              onChange={e => {
+                                const next = [...(selected.options ?? [])]
+                                next[idx] = e.target.value
+                                updateField(selected.id, { options: next })
+                              }}
+                              sx={{ ...darkInputSx, flex: 1, minWidth: 0 }}
+                            />
+                            {/* Radio-only: font size, B/I, color */}
+                            {isRadio && (
+                              <>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  value={style.fontSize ?? ''}
+                                  placeholder="sz"
+                                  onChange={e =>
+                                    updateStyle({
+                                      fontSize:
+                                        Number(e.target.value) || undefined
+                                    })
+                                  }
+                                  slotProps={{
+                                    htmlInput: { min: 6, max: 72, step: 1 }
+                                  }}
+                                  sx={{
+                                    ...darkInputSx,
+                                    width: 38,
+                                    '& input': {
+                                      px: '4px',
+                                      py: '4px',
+                                      textAlign: 'center',
+                                      fontSize: 11
+                                    }
+                                  }}
+                                />
+                                {(['bold', 'italic'] as const).map(s => {
+                                  const active =
+                                    s === 'bold' ? isBold : isItalic
+                                  return (
+                                    <ButtonBase
+                                      key={s}
+                                      onClick={() =>
+                                        updateStyle(
+                                          s === 'bold'
+                                            ? {
+                                                fontWeight: active
+                                                  ? 'normal'
+                                                  : 'bold'
+                                              }
+                                            : {
+                                                fontStyle: active
+                                                  ? 'normal'
+                                                  : 'italic'
+                                              }
+                                        )
+                                      }
+                                      sx={{
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: '4px',
+                                        border: `1px solid ${C.border}`,
+                                        bgcolor: active
+                                          ? C.accent
+                                          : 'transparent',
+                                        color: active ? C.accentText : C.muted,
+                                        fontWeight: s === 'bold' ? 700 : 400,
+                                        fontStyle:
+                                          s === 'italic' ? 'italic' : 'normal',
+                                        fontSize: 12,
+                                        flexShrink: 0
+                                      }}
+                                    >
+                                      {s === 'bold' ? 'B' : 'I'}
+                                    </ButtonBase>
+                                  )
+                                })}
+                                <Tooltip title="Text color">
+                                  <Box
+                                    component="label"
                                     sx={{
-                                      width: 24, height: 24, borderRadius: '4px',
+                                      width: 24,
+                                      height: 24,
+                                      borderRadius: '4px',
                                       border: `1px solid ${C.border}`,
-                                      bgcolor: active ? C.accent : 'transparent',
-                                      color: active ? C.accentText : C.muted,
-                                      fontWeight: s === 'bold' ? 700 : 400,
-                                      fontStyle: s === 'italic' ? 'italic' : 'normal',
-                                      fontSize: 12, flexShrink: 0
+                                      bgcolor: style.textColor ?? '#1a1a1a',
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                      position: 'relative',
+                                      overflow: 'hidden'
                                     }}
                                   >
-                                    {s === 'bold' ? 'B' : 'I'}
-                                  </ButtonBase>
-                                )
-                              })}
-                              <Tooltip title="Text color">
-                                <Box
-                                  component="label"
-                                  sx={{
-                                    width: 24, height: 24, borderRadius: '4px',
-                                    border: `1px solid ${C.border}`,
-                                    bgcolor: style.textColor ?? '#1a1a1a',
-                                    cursor: 'pointer', flexShrink: 0,
-                                    position: 'relative', overflow: 'hidden'
-                                  }}
-                                >
-                                  <input
-                                    type="color"
-                                    value={style.textColor ?? '#1a1a1a'}
-                                    onChange={e => updateStyle({ textColor: e.target.value })}
-                                    style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', border: 'none', padding: 0 }}
-                                  />
-                                </Box>
-                              </Tooltip>
-                            </>
-                          )}
-                          <Tooltip title="Remove">
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                const nextOpts   = (selected.options ?? []).filter((_, i) => i !== idx)
-                                const nextStyles = (selected.optionStyles ?? []).filter((_, i) => i !== idx)
-                                updateField(selected.id, { options: nextOpts.length ? nextOpts : [''], optionStyles: nextStyles })
-                              }}
-                              sx={{ color: C.muted, '&:hover': { color: '#e57373' }, p: '2px', flexShrink: 0 }}
-                            >
-                              <DeleteOutlinedIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )
-                    })}
+                                    <input
+                                      type="color"
+                                      value={style.textColor ?? '#1a1a1a'}
+                                      onChange={e =>
+                                        updateStyle({
+                                          textColor: e.target.value
+                                        })
+                                      }
+                                      style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        opacity: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        cursor: 'pointer',
+                                        border: 'none',
+                                        padding: 0
+                                      }}
+                                    />
+                                  </Box>
+                                </Tooltip>
+                              </>
+                            )}
+                            <Tooltip title="Remove">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  const nextOpts = (
+                                    selected.options ?? []
+                                  ).filter((_, i) => i !== idx)
+                                  const nextStyles = (
+                                    selected.optionStyles ?? []
+                                  ).filter((_, i) => i !== idx)
+                                  updateField(selected.id, {
+                                    options: nextOpts.length ? nextOpts : [''],
+                                    optionStyles: nextStyles
+                                  })
+                                }}
+                                sx={{
+                                  color: C.muted,
+                                  '&:hover': { color: '#e57373' },
+                                  p: '2px',
+                                  flexShrink: 0
+                                }}
+                              >
+                                <DeleteOutlinedIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        )
+                      }
+                    )}
                   </Stack>
                   <ButtonBase
-                    onClick={() => updateField(selected.id, {
-                      options: [...(selected.options ?? []), ''],
-                      optionStyles: [...(selected.optionStyles ?? []), {}]
-                    })}
+                    onClick={() =>
+                      updateField(selected.id, {
+                        options: [...(selected.options ?? []), ''],
+                        optionStyles: [...(selected.optionStyles ?? []), {}]
+                      })
+                    }
                     sx={{
-                      mt: 0.75, display: 'flex', alignItems: 'center', gap: '4px',
-                      fontSize: 11, color: C.accent, px: 0.5, py: 0.25,
-                      borderRadius: '4px', '&:hover': { bgcolor: 'rgba(108,158,255,0.1)' }
+                      mt: 0.75,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: 11,
+                      color: C.accent,
+                      px: 0.5,
+                      py: 0.25,
+                      borderRadius: '4px',
+                      '&:hover': { bgcolor: 'rgba(108,158,255,0.1)' }
                     }}
                   >
                     <AddIcon sx={{ fontSize: 14 }} />
@@ -2232,7 +2624,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       value={selected.fontSize ?? 12}
                       onChange={e =>
-                        updateField(selected.id, { fontSize: Number(e.target.value) || 12 })
+                        updateField(selected.id, {
+                          fontSize: Number(e.target.value) || 12
+                        })
                       }
                       sx={{ flex: 1, ...darkInputSx }}
                     />
@@ -2246,7 +2640,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                           <ButtonBase
                             key={style}
                             onClick={() =>
-                              updateField(selected.id,
+                              updateField(
+                                selected.id,
                                 isWeight
                                   ? { fontWeight: active ? 'normal' : 'bold' }
                                   : { fontStyle: active ? 'normal' : 'italic' }
@@ -2260,7 +2655,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                               bgcolor: active ? C.accent : 'transparent',
                               color: active ? C.accentText : C.muted,
                               fontWeight: style === 'bold' ? 700 : 400,
-                              fontStyle: style === 'italic' ? 'italic' : 'normal',
+                              fontStyle:
+                                style === 'italic' ? 'italic' : 'normal',
                               fontSize: 13
                             }}
                           >
@@ -2292,7 +2688,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                         return (
                           <ButtonBase
                             key={align}
-                            onClick={() => updateField(selected.id, { textAlign: align })}
+                            onClick={() =>
+                              updateField(selected.id, { textAlign: align })
+                            }
                             sx={{
                               flex: 1,
                               fontSize: 11.5,
@@ -2322,7 +2720,11 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.paddingTop ?? 4}
-                      onChange={e => updateField(selected.id, { paddingTop: Math.max(0, Number(e.target.value)) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          paddingTop: Math.max(0, Number(e.target.value))
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                     />
                     <TextField
@@ -2330,7 +2732,11 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.paddingBottom ?? 4}
-                      onChange={e => updateField(selected.id, { paddingBottom: Math.max(0, Number(e.target.value)) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          paddingBottom: Math.max(0, Number(e.target.value))
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                     />
                   </Stack>
@@ -2353,7 +2759,11 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.borderWidth ?? 0}
-                      onChange={e => updateField(selected.id, { borderWidth: Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderWidth: Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
                     />
@@ -2362,12 +2772,18 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.borderRadius ?? 0}
-                      onChange={e => updateField(selected.id, { borderRadius: Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderRadius: Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   </Stack>
-                  <Typography sx={{ fontSize: 10, color: C.muted, mb: 0.5 }}>Per-corner radius (overrides "Radius")</Typography>
+                  <Typography sx={{ fontSize: 10, color: C.muted, mb: 0.5 }}>
+                    {`Per-corner radius (overrides "Radius")`}
+                  </Typography>
                   <Stack direction="row" sx={{ gap: 1 }}>
                     <TextField
                       label="Top Left"
@@ -2375,7 +2791,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderTopLeftRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderTopLeftRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderTopLeftRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2385,7 +2808,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderTopRightRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderTopRightRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderTopRightRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2397,7 +2827,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderBottomLeftRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderBottomLeftRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderBottomLeftRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2407,7 +2844,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderBottomRightRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderBottomRightRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderBottomRightRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2430,13 +2874,17 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       if (!file) return
                       const reader = new FileReader()
                       reader.onload = ev => {
-                        updateField(selected.id, { imageData: ev.target?.result as string })
+                        updateField(selected.id, {
+                          imageData: ev.target?.result as string
+                        })
                       }
                       reader.readAsDataURL(file)
                     }}
                   />
                   <MockButton onClick={() => imageInputRef.current?.click()}>
-                    {selected.imageData ? 'Replace image' : 'Upload image (PNG / JPEG)'}
+                    {selected.imageData
+                      ? 'Replace image'
+                      : 'Upload image (PNG / JPEG)'}
                   </MockButton>
 
                   {/* Free position toggle */}
@@ -2473,8 +2921,11 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                                       column: undefined,
                                       x: selected.x || PAGE_MARGIN,
                                       y: selected.y || 400,
-                                      width: selected.width || PAGE_WIDTH - 2 * PAGE_MARGIN,
-                                      height: selected.height || DEFAULT_IMAGE_HEIGHT,
+                                      width:
+                                        selected.width ||
+                                        PAGE_WIDTH - 2 * PAGE_MARGIN,
+                                      height:
+                                        selected.height || DEFAULT_IMAGE_HEIGHT,
                                       page
                                     }
                                   ]
@@ -2483,13 +2934,22 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                                 // Put back into a new grid row
                                 setFields(current => {
                                   const pageRows = current
-                                    .filter(f => (f.page || 1) === page && f.row)
+                                    .filter(
+                                      f => (f.page || 1) === page && f.row
+                                    )
                                     .map(f => f.row!)
-                                  const maxRow = pageRows.length ? Math.max(...pageRows) : 0
+                                  const maxRow = pageRows.length
+                                    ? Math.max(...pageRows)
+                                    : 0
                                   return normalize(
                                     current.map(f =>
                                       f.id === selected.id
-                                        ? { ...f, row: maxRow + 1, column: 1, page }
+                                        ? {
+                                            ...f,
+                                            row: maxRow + 1,
+                                            column: 1,
+                                            page
+                                          }
                                         : f
                                     )
                                   )
@@ -2511,7 +2971,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       })}
                     </Stack>
                     {!selected.row && (
-                      <Typography sx={{ fontSize: 11, color: C.muted, mt: 0.5, lineHeight: 1.4 }}>
+                      <Typography
+                        sx={{
+                          fontSize: 11,
+                          color: C.muted,
+                          mt: 0.5,
+                          lineHeight: 1.4
+                        }}
+                      >
                         Drag the image on the canvas to position it freely.
                       </Typography>
                     )}
@@ -2529,11 +2996,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       }}
                     >
                       {(['contain', 'fill'] as const).map(fit => {
-                        const active = (selected.imageObjectFit ?? 'contain') === fit
+                        const active =
+                          (selected.imageObjectFit ?? 'contain') === fit
                         return (
                           <ButtonBase
                             key={fit}
-                            onClick={() => updateField(selected.id, { imageObjectFit: fit })}
+                            onClick={() =>
+                              updateField(selected.id, { imageObjectFit: fit })
+                            }
                             sx={{
                               flex: 1,
                               fontSize: 11.5,
@@ -2563,7 +3033,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     type="number"
                     value={selected.height ?? 1}
                     onChange={e =>
-                      updateField(selected.id, { height: Number(e.target.value) || 1 })
+                      updateField(selected.id, {
+                        height: Number(e.target.value) || 1
+                      })
                     }
                     sx={darkInputSx}
                   />
@@ -2581,17 +3053,41 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                   <SectionDivider />
                   {/* Label position picker */}
                   <Box>
-                    <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>Label position</Typography>
-                    <Stack direction="row" sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', overflow: 'hidden' }}>
+                    <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>
+                      Label position
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        border: `1px solid ${C.border}`,
+                        borderRadius: '6px',
+                        overflow: 'hidden'
+                      }}
+                    >
                       {(['above', 'none'] as const).map(pos => (
                         <ButtonBase
                           key={pos}
-                          onClick={() => updateField(selected.id, { tableLabelPosition: pos })}
+                          onClick={() =>
+                            updateField(selected.id, {
+                              tableLabelPosition: pos
+                            })
+                          }
                           sx={{
-                            flex: 1, fontSize: 12, py: 0.8,
-                            fontWeight: (selected.tableLabelPosition ?? 'none') === pos ? 700 : 400,
-                            bgcolor: (selected.tableLabelPosition ?? 'none') === pos ? C.accent : 'transparent',
-                            color: (selected.tableLabelPosition ?? 'none') === pos ? C.accentText : C.muted
+                            flex: 1,
+                            fontSize: 12,
+                            py: 0.8,
+                            fontWeight:
+                              (selected.tableLabelPosition ?? 'none') === pos
+                                ? 700
+                                : 400,
+                            bgcolor:
+                              (selected.tableLabelPosition ?? 'none') === pos
+                                ? C.accent
+                                : 'transparent',
+                            color:
+                              (selected.tableLabelPosition ?? 'none') === pos
+                                ? C.accentText
+                                : C.muted
                           }}
                         >
                           {pos === 'above' ? 'Above table' : 'Hidden'}
@@ -2600,35 +3096,47 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     </Stack>
                   </Box>
                   {/* Title bar styling — only when visible */}
-                  {selected.tableLabelPosition === 'above' && (() => {
-                    const cfg = selected.tableConfig ?? defaultTableConfig()
-                    const patchCfg = (patch: Partial<TableConfig>) =>
-                      updateField(selected.id, { tableConfig: { ...cfg, ...patch } })
-                    return (
-                      <Stack sx={{ gap: 1 }}>
-                        <ColorPicker
-                          label="Title background"
-                          value={cfg.titleBg ?? '#2c3a57'}
-                          onChange={v => patchCfg({ titleBg: v })}
-                        />
-                        <ColorPicker
-                          label="Title text color"
-                          value={cfg.titleTextColor ?? '#ffffff'}
-                          onChange={v => patchCfg({ titleTextColor: v })}
-                        />
-                        <TextField
-                          label="Title font size (pt)"
-                          size="small"
-                          type="number"
-                          value={cfg.titleFontSize ?? 11}
-                          onChange={e => patchCfg({ titleFontSize: Number(e.target.value) || 11 })}
-                          sx={{ ...darkInputSx }}
-                          slotProps={{ htmlInput: { min: 6, max: 24, step: 1 } }}
-                        />
-                      </Stack>
-                    )
-                  })()}
-                  <MockButton onClick={() => setShowTableEditor(true)} sx={{ width: '100%', justifyContent: 'center' }}>
+                  {selected.tableLabelPosition === 'above' &&
+                    (() => {
+                      const cfg = selected.tableConfig ?? defaultTableConfig()
+                      const patchCfg = (patch: Partial<TableConfig>) =>
+                        updateField(selected.id, {
+                          tableConfig: { ...cfg, ...patch }
+                        })
+                      return (
+                        <Stack sx={{ gap: 1 }}>
+                          <ColorPicker
+                            label="Title background"
+                            value={cfg.titleBg ?? '#2c3a57'}
+                            onChange={v => patchCfg({ titleBg: v })}
+                          />
+                          <ColorPicker
+                            label="Title text color"
+                            value={cfg.titleTextColor ?? '#ffffff'}
+                            onChange={v => patchCfg({ titleTextColor: v })}
+                          />
+                          <TextField
+                            label="Title font size (pt)"
+                            size="small"
+                            type="number"
+                            value={cfg.titleFontSize ?? 11}
+                            onChange={e =>
+                              patchCfg({
+                                titleFontSize: Number(e.target.value) || 11
+                              })
+                            }
+                            sx={{ ...darkInputSx }}
+                            slotProps={{
+                              htmlInput: { min: 6, max: 24, step: 1 }
+                            }}
+                          />
+                        </Stack>
+                      )
+                    })()}
+                  <MockButton
+                    onClick={() => setShowTableEditor(true)}
+                    sx={{ width: '100%', justifyContent: 'center' }}
+                  >
                     Edit table structure
                   </MockButton>
                 </>
@@ -2650,24 +3158,35 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                     size="small"
                     type="number"
                     value={selected.fontSize ?? 10}
-                    onChange={e => updateField(selected.id, { fontSize: Number(e.target.value) || 10 })}
+                    onChange={e =>
+                      updateField(selected.id, {
+                        fontSize: Number(e.target.value) || 10
+                      })
+                    }
                     sx={{ flex: 1, ...darkInputSx }}
                     slotProps={{ htmlInput: { min: 6, max: 48, step: 1 } }}
                   />
                   <Stack direction="row" sx={{ gap: 0.5 }}>
                     {(['bold', 'italic'] as const).map(s => {
                       const isWeight = s === 'bold'
-                      const active = isWeight ? selected.fontWeight === 'bold' : selected.fontStyle === 'italic'
+                      const active = isWeight
+                        ? selected.fontWeight === 'bold'
+                        : selected.fontStyle === 'italic'
                       return (
                         <ButtonBase
                           key={s}
-                          onClick={() => updateField(selected.id,
-                            isWeight
-                              ? { fontWeight: active ? 'normal' : 'bold' }
-                              : { fontStyle: active ? 'normal' : 'italic' }
-                          )}
+                          onClick={() =>
+                            updateField(
+                              selected.id,
+                              isWeight
+                                ? { fontWeight: active ? 'normal' : 'bold' }
+                                : { fontStyle: active ? 'normal' : 'italic' }
+                            )
+                          }
                           sx={{
-                            width: 32, height: 32, borderRadius: '6px',
+                            width: 32,
+                            height: 32,
+                            borderRadius: '6px',
                             border: `1px solid ${C.border}`,
                             bgcolor: active ? C.accent : 'transparent',
                             color: active ? C.accentText : C.muted,
@@ -2705,7 +3224,11 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.borderWidth ?? 1}
-                      onChange={e => updateField(selected.id, { borderWidth: Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderWidth: Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 0.5 } }}
                     />
@@ -2714,13 +3237,19 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       size="small"
                       type="number"
                       value={selected.borderRadius ?? 2}
-                      onChange={e => updateField(selected.id, { borderRadius: Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderRadius: Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
                   </Stack>
                   {/* Per-corner radius overrides */}
-                  <Typography sx={{ fontSize: 10, color: C.muted, mb: 0.5 }}>Per-corner radius (overrides "Radius")</Typography>
+                  <Typography sx={{ fontSize: 10, color: C.muted, mb: 0.5 }}>
+                    {`Per-corner radius (overrides "Radius")`}
+                  </Typography>
                   <Stack direction="row" sx={{ gap: 1 }}>
                     <TextField
                       label="Top Left"
@@ -2728,7 +3257,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderTopLeftRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderTopLeftRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderTopLeftRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2738,7 +3274,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderTopRightRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderTopRightRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderTopRightRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2750,7 +3293,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderBottomLeftRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderBottomLeftRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderBottomLeftRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2760,7 +3310,14 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       type="number"
                       placeholder={String(selected.borderRadius ?? 0)}
                       value={selected.borderBottomRightRadius ?? ''}
-                      onChange={e => updateField(selected.id, { borderBottomRightRadius: e.target.value === '' ? undefined : Number(e.target.value) })}
+                      onChange={e =>
+                        updateField(selected.id, {
+                          borderBottomRightRadius:
+                            e.target.value === ''
+                              ? undefined
+                              : Number(e.target.value)
+                        })
+                      }
                       sx={{ flex: 1, ...darkInputSx }}
                       slotProps={{ htmlInput: { min: 0, step: 1 } }}
                     />
@@ -2770,7 +3327,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
               <ColorPicker
                 label="Row background (full width)"
                 value={
-                  getRowFirst(selected.row ?? 0)?.rowBackgroundColor ?? '#ffffff'
+                  getRowFirst(selected.row ?? 0)?.rowBackgroundColor ??
+                  '#ffffff'
                 }
                 onChange={v => {
                   const first = getRowFirst(selected.row ?? 0)
@@ -2827,7 +3385,12 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
                       normalize(
                         current.map(f =>
                           f.id === selected.id
-                            ? { ...f, page: targetPage, row: nextRow, column: 1 }
+                            ? {
+                                ...f,
+                                page: targetPage,
+                                row: nextRow,
+                                column: 1
+                              }
                             : f
                         )
                       )
@@ -2888,7 +3451,8 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
         </DialogTitle>
         <DialogContent>
           <Typography sx={{ fontSize: 13, color: C.muted }}>
-            All fields on Page {deleteConfirmPage} will be permanently removed. This cannot be undone.
+            All fields on Page {deleteConfirmPage} will be permanently removed.
+            This cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2, gap: 1 }}>
@@ -2902,7 +3466,9 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
           <Button
             size="small"
             variant="contained"
-            onClick={() => deleteConfirmPage !== null && deletePage(deleteConfirmPage)}
+            onClick={() =>
+              deleteConfirmPage !== null && deletePage(deleteConfirmPage)
+            }
             sx={{
               bgcolor: 'rgba(229,83,75,0.85)',
               color: '#fff',
@@ -2984,28 +3550,28 @@ function FieldCanvas({
   rowHeight: number
 }) {
   if (field.type === 'static-text') {
-    const bw  = field.borderWidth   ?? 0
-    const bc  = field.borderColor   ?? '#cccccc'
-    const br  = field.borderRadius  ?? 0
-    const btw = field.borderTopWidth    ?? bw
-    const brw = field.borderRightWidth  ?? bw
+    const bw = field.borderWidth ?? 0
+    const bc = field.borderColor ?? '#cccccc'
+    const br = field.borderRadius ?? 0
+    const btw = field.borderTopWidth ?? bw
+    const brw = field.borderRightWidth ?? bw
     const bbw = field.borderBottomWidth ?? bw
-    const blw = field.borderLeftWidth   ?? bw
+    const blw = field.borderLeftWidth ?? bw
     // Per-corner radius (CSS order: TL TR BR BL)
-    const rTL = field.borderTopLeftRadius     ?? br
-    const rTR = field.borderTopRightRadius    ?? br
+    const rTL = field.borderTopLeftRadius ?? br
+    const rTR = field.borderTopRightRadius ?? br
     const rBR = field.borderBottomRightRadius ?? br
-    const rBL = field.borderBottomLeftRadius  ?? br
+    const rBL = field.borderBottomLeftRadius ?? br
     const radiusCss = `${px(rTL)}px ${px(rTR)}px ${px(rBR)}px ${px(rBL)}px`
     const size = field.fontSize ?? 12
     const lineH = size * 1.4
     return (
       <Box
         sx={{
-          borderTop:    btw > 0 ? `${btw}px solid ${bc}` : 'none',
-          borderRight:  brw > 0 ? `${brw}px solid ${bc}` : 'none',
+          borderTop: btw > 0 ? `${btw}px solid ${bc}` : 'none',
+          borderRight: brw > 0 ? `${brw}px solid ${bc}` : 'none',
           borderBottom: bbw > 0 ? `${bbw}px solid ${bc}` : 'none',
-          borderLeft:   blw > 0 ? `${blw}px solid ${bc}` : 'none',
+          borderLeft: blw > 0 ? `${blw}px solid ${bc}` : 'none',
           borderRadius: radiusCss,
           overflow: 'hidden',
           boxSizing: 'border-box',
@@ -3014,9 +3580,9 @@ function FieldCanvas({
       >
         <Box
           sx={{
-          pt: `${px(field.paddingTop ?? 4)}px`,
-          pb: `${px(field.paddingBottom ?? 4)}px`,
-          px: `${px(4)}px`,
+            pt: `${px(field.paddingTop ?? 4)}px`,
+            pb: `${px(field.paddingBottom ?? 4)}px`,
+            px: `${px(4)}px`,
             fontSize: px(size),
             fontWeight: field.fontWeight === 'bold' ? 700 : 400,
             fontStyle: field.fontStyle === 'italic' ? 'italic' : 'normal',
@@ -3033,7 +3599,10 @@ function FieldCanvas({
             '& u': { textDecoration: 'underline' }
           }}
           dangerouslySetInnerHTML={{
-            __html: field.contentHtml ?? field.content ?? '<em style="color:#aaa">Static text</em>'
+            __html:
+              field.contentHtml ??
+              field.content ??
+              '<em style="color:#aaa">Static text</em>'
           }}
         />
       </Box>
@@ -3076,7 +3645,14 @@ function FieldCanvas({
 
   if (field.type === 'divider') {
     return (
-      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', height: '100%' }}>
+      <Box
+        sx={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          height: '100%'
+        }}
+      >
         <Box
           sx={{
             width: '100%',
@@ -3110,7 +3686,10 @@ function FieldCanvas({
             display: 'flex',
             alignItems: 'flex-end',
             pb: `${px(3)}px`,
-            '& p': { margin: 0 }, '& strong': { fontWeight: 700 }, '& em': { fontStyle: 'italic' }, '& u': { textDecoration: 'underline' }
+            '& p': { margin: 0 },
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' }
           }}
           dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
         />
@@ -3151,13 +3730,15 @@ function FieldCanvas({
             flexShrink: 0
           }}
         />
-        <Typography sx={{
-          fontSize: px(s.fontSize ?? 10),
-          fontWeight: s.fontWeight ?? 'normal',
-          fontStyle: s.fontStyle ?? 'normal',
-          color: s.textColor ?? '#333',
-          whiteSpace: 'nowrap'
-        }}>
+        <Typography
+          sx={{
+            fontSize: px(s.fontSize ?? 10),
+            fontWeight: s.fontWeight ?? 'normal',
+            fontStyle: s.fontStyle ?? 'normal',
+            color: s.textColor ?? '#333',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {opt || field.label}
         </Typography>
       </Stack>
@@ -3193,7 +3774,10 @@ function FieldCanvas({
             overflow: 'visible',
             width: 'max-content',
             flexShrink: 0,
-            '& p': { margin: 0 }, '& strong': { fontWeight: 700 }, '& em': { fontStyle: 'italic' }, '& u': { textDecoration: 'underline' }
+            '& p': { margin: 0 },
+            '& strong': { fontWeight: 700 },
+            '& em': { fontStyle: 'italic' },
+            '& u': { textDecoration: 'underline' }
           }}
           dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
         />
@@ -3206,27 +3790,30 @@ function FieldCanvas({
   const bc = field.borderColor ?? '#999999'
   const br = field.borderRadius ?? 2
   // Per-side widths fall back to the uniform borderWidth
-  const btw = field.borderTopWidth    ?? bw
-  const brw = field.borderRightWidth  ?? bw
+  const btw = field.borderTopWidth ?? bw
+  const brw = field.borderRightWidth ?? bw
   const bbw = field.borderBottomWidth ?? bw
-  const blw = field.borderLeftWidth   ?? bw
+  const blw = field.borderLeftWidth ?? bw
   // Per-corner radius (CSS order: TL TR BR BL)
-  const rTL = field.borderTopLeftRadius     ?? br
-  const rTR = field.borderTopRightRadius    ?? br
+  const rTL = field.borderTopLeftRadius ?? br
+  const rTR = field.borderTopRightRadius ?? br
   const rBR = field.borderBottomRightRadius ?? br
-  const rBL = field.borderBottomLeftRadius  ?? br
+  const rBL = field.borderBottomLeftRadius ?? br
   const radiusCss = `${px(rTL)}px ${px(rTR)}px ${px(rBR)}px ${px(rBL)}px`
   // Divider between label strip and input uses the top+bottom sides
   const midW = Math.max(btw, bbw, 0.5)
   // Read alignment from labelHtml the same way the PDF export does
   const align = (() => {
     if (!field.labelHtml) return 'flex-start'
-    const m = field.labelHtml.match(/<p[^>]*style="[^"]*text-align:\s*(left|center|right)/i)
+    const m = field.labelHtml.match(
+      /<p[^>]*style="[^"]*text-align:\s*(left|center|right)/i
+    )
     const a = m?.[1]?.toLowerCase()
     return a === 'center' ? 'center' : a === 'right' ? 'flex-end' : 'flex-start'
   })()
   // Bold: default true when no labelHtml (new field); detect <strong> when HTML exists
-  const labelHasBold = !field.labelHtml || /<strong|<b[ >]/i.test(field.labelHtml)
+  const labelHasBold =
+    !field.labelHtml || /<strong|<b[ >]/i.test(field.labelHtml)
   // Italic: detect <em> or <i> in HTML
   const labelHasItalic = /<em|<i[ >]/i.test(field.labelHtml ?? '')
   // Underline: detect <u> in HTML
@@ -3234,10 +3821,10 @@ function FieldCanvas({
   return (
     <Box
       sx={{
-        borderTop:    `${btw}px solid ${bc}`,
-        borderRight:  `${brw}px solid ${bc}`,
+        borderTop: `${btw}px solid ${bc}`,
+        borderRight: `${brw}px solid ${bc}`,
         borderBottom: `${bbw}px solid ${bc}`,
-        borderLeft:   `${blw}px solid ${bc}`,
+        borderLeft: `${blw}px solid ${bc}`,
         borderRadius: radiusCss,
         overflow: 'hidden',
         height: px(LABEL_SPACE + field.height),
@@ -3278,56 +3865,104 @@ function FieldCanvas({
           borderTop: `${midW}px solid ${bc}`
         }}
       >
-        {field.type === 'dropdown' && (() => {
-          const hasPlaceholder = !!field.dropdownPlaceholder
-          const displayText = field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'
-          // Only apply option styling when actually showing that option (no placeholder)
-          const optStyle = hasPlaceholder ? null : (field.optionStyles?.[0] ?? null)
-          return (
-            <>
-              <Typography sx={{
-                fontSize: px(optStyle?.fontSize ?? field.fontSize ?? 10),
-                fontWeight: optStyle?.fontWeight ?? 'normal',
-                fontStyle: optStyle?.fontStyle ?? 'normal',
-                color: hasPlaceholder ? '#aaa' : (optStyle?.textColor ?? '#555'),
-                flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
-              }}>
-                {displayText}
-              </Typography>
-              <Typography sx={{ fontSize: px(9), color: '#777', ml: 0.5, flexShrink: 0 }}>▾</Typography>
-            </>
-          )
-        })()}
-        {field.type === 'radio' && (() => {
-          const opts = field.options ?? []
-          const cols = Math.max(1, field.radioColumns ?? 1)
-          const isSingle = opts.length <= 1
-          if (isSingle) {
-            // handled above as a special render path — won't reach here
-            return null
-          }
-          return (
-            <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, width: '100%', gap: `${px(2)}px 0` }}>
-              {opts.map((opt, i) => {
-                const s = (field.optionStyles ?? [])[i] ?? {}
-                return (
-                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: `${px(3)}px` }}>
-                    <Box sx={{ width: px(7), height: px(7), borderRadius: '50%', border: `${px(1)}px solid #999`, bgcolor: '#fff', flexShrink: 0 }} />
-                    <Typography sx={{
-                      fontSize: px(s.fontSize ?? field.fontSize ?? 10),
-                      fontWeight: s.fontWeight ?? 'normal',
-                      fontStyle: s.fontStyle ?? 'normal',
-                      color: s.textColor ?? '#1a1a1a',
-                      overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
-                    }}>
-                      {opt}
-                    </Typography>
-                  </Box>
-                )
-              })}
-            </Box>
-          )
-        })()}
+        {field.type === 'dropdown' &&
+          (() => {
+            const hasPlaceholder = !!field.dropdownPlaceholder
+            const displayText =
+              field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'
+            // Only apply option styling when actually showing that option (no placeholder)
+            const optStyle = hasPlaceholder
+              ? null
+              : (field.optionStyles?.[0] ?? null)
+            return (
+              <>
+                <Typography
+                  sx={{
+                    fontSize: px(optStyle?.fontSize ?? field.fontSize ?? 10),
+                    fontWeight: optStyle?.fontWeight ?? 'normal',
+                    fontStyle: optStyle?.fontStyle ?? 'normal',
+                    color: hasPlaceholder
+                      ? '#aaa'
+                      : (optStyle?.textColor ?? '#555'),
+                    flex: 1,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {displayText}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: px(9),
+                    color: '#777',
+                    ml: 0.5,
+                    flexShrink: 0
+                  }}
+                >
+                  ▾
+                </Typography>
+              </>
+            )
+          })()}
+        {field.type === 'radio' &&
+          (() => {
+            const opts = field.options ?? []
+            const cols = Math.max(1, field.radioColumns ?? 1)
+            const isSingle = opts.length <= 1
+            if (isSingle) {
+              // handled above as a special render path — won't reach here
+              return null
+            }
+            return (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                  width: '100%',
+                  gap: `${px(2)}px 0`
+                }}
+              >
+                {opts.map((opt, i) => {
+                  const s = (field.optionStyles ?? [])[i] ?? {}
+                  return (
+                    <Box
+                      key={i}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: `${px(3)}px`
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: px(7),
+                          height: px(7),
+                          borderRadius: '50%',
+                          border: `${px(1)}px solid #999`,
+                          bgcolor: '#fff',
+                          flexShrink: 0
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: px(s.fontSize ?? field.fontSize ?? 10),
+                          fontWeight: s.fontWeight ?? 'normal',
+                          fontStyle: s.fontStyle ?? 'normal',
+                          color: s.textColor ?? '#1a1a1a',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {opt}
+                      </Typography>
+                    </Box>
+                  )
+                })}
+              </Box>
+            )
+          })()}
       </Box>
     </Box>
   )

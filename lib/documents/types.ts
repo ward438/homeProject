@@ -4,7 +4,7 @@ export type TitleStyle = {
   fontSize: number
   fontWeight: 'bold' | 'normal'
   color: string
-  spacingBelow: number  // extra pts between title and first content row
+  spacingBelow: number // extra pts between title and first content row
 }
 
 export const DEFAULT_TITLE_STYLE: TitleStyle = {
@@ -59,7 +59,7 @@ export type TableConfig = {
   borderColor?: string
   cellPadding?: number
   rowHeight?: number
-  allowUserInput?: boolean   // when true, all data cells become fillable PDF fields
+  allowUserInput?: boolean // when true, all data cells become fillable PDF fields
 }
 
 export type DropdownOptionStyle = {
@@ -142,12 +142,7 @@ export type FormField = {
 }
 
 export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonValue[]
-  | { [key: string]: JsonValue }
+  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 
 export type DocumentRecord = {
   id: string
@@ -175,6 +170,7 @@ export type FormTemplateRecord = {
 export type FormExportRequest = {
   name: string
   fields: FormField[]
+  titleStyle?: TitleStyle
   sourceDocumentId?: string
 }
 

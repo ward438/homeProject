@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { getCurrentUserId } from '@/lib/auth/get-current-user'
-import {
-  createDocument,
-  createFormTemplate
-} from '@/lib/documents/db'
+import { createDocument, createFormTemplate } from '@/lib/documents/db'
 import { exportFormPdf } from '@/lib/documents/form-export'
 import {
   createDocumentId,
@@ -34,7 +31,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const pdfBuffer = await exportFormPdf(name, fields as FormField[], titleStyle)
+    const pdfBuffer = await exportFormPdf(
+      name,
+      fields as FormField[],
+      titleStyle
+    )
     const documentId = createDocumentId()
     const pdfPath = await savePdfFile(userId, documentId, pdfBuffer, 'form')
 
@@ -61,9 +62,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ template, document })
   } catch (error) {
     console.error('[documents forms export]', error)
-    return NextResponse.json(
-      { error: 'Form export failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Form export failed' }, { status: 500 })
   }
 }

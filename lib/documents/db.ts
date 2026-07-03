@@ -1,14 +1,14 @@
 import { and, desc, eq, or } from 'drizzle-orm'
 
-import { withRLS } from '@/lib/db/with-rls'
 import {
-  documents,
-  formTemplates,
   type Document,
+  documents,
   type FormTemplate,
+  formTemplates,
   type NewDocument,
   type NewFormTemplate
 } from '@/lib/db/schema'
+import { withRLS } from '@/lib/db/with-rls'
 
 import type { FormField, JsonValue } from './types'
 
@@ -72,9 +72,7 @@ export async function deleteDocument(
   return withRLS(userId, async tx => {
     const deleted = await tx
       .delete(documents)
-      .where(
-        and(eq(documents.id, documentId), eq(documents.userId, userId))
-      )
+      .where(and(eq(documents.id, documentId), eq(documents.userId, userId)))
       .returning({ id: documents.id })
     return deleted.length > 0
   })
@@ -150,7 +148,12 @@ export async function updateFormTemplate(
   templateId: string,
   data: Partial<Pick<FormTemplate, 'name' | 'exportedDocumentId'>> & {
     fields?: FormField[]
-    titleStyle?: { fontSize?: number; fontWeight?: 'bold' | 'normal'; color?: string; spacingBelow?: number }
+    titleStyle?: {
+      fontSize?: number
+      fontWeight?: 'bold' | 'normal'
+      color?: string
+      spacingBelow?: number
+    }
   }
 ): Promise<FormTemplate | null> {
   return withRLS(userId, async tx => {
@@ -164,7 +167,9 @@ export async function updateFormTemplate(
       values.fields = data.fields as unknown as NewFormTemplate['fields']
     }
     if (typeof data.titleStyle !== 'undefined') {
-      values.config = { titleStyle: data.titleStyle } as unknown as NewFormTemplate['config']
+      values.config = {
+        titleStyle: data.titleStyle
+      } as unknown as NewFormTemplate['config']
     }
 
     const [updated] = await tx

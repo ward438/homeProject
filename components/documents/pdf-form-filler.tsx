@@ -37,6 +37,7 @@ export function PdfFormFiller({ documentId, onSaved }: PdfFormFillerProps) {
 
   useEffect(() => {
     if (!documentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFields([])
       setValues({})
       return

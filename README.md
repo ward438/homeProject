@@ -43,25 +43,26 @@ npm run dev
 
 ## Useful scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start Next.js dev server |
-| `npm run db:up` | Start Postgres + Redis + SearXNG + Gotenberg |
-| `npm run db:down` | Stop all Docker services |
-| `npm run db:migrate` | Run Drizzle migrations |
-| `npm run build` | Production build |
+| Script               | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `npm run dev`        | Start Next.js dev server                     |
+| `npm run db:up`      | Start Postgres + Redis + SearXNG + Gotenberg |
+| `npm run db:down`    | Stop all Docker services                     |
+| `npm run db:migrate` | Run Drizzle migrations                       |
+| `npm run build`      | Production build                             |
 
 ## Documents tool
 
 Upload PDF, TXT, or DOCX files at `/documents`:
 
-| Format | Behavior |
-|--------|----------|
-| PDF | Stored and opened directly in the viewer |
-| TXT | Converted to PDF via `pdf-lib` |
-| DOCX | Converted to PDF via Gotenberg (`localhost:3001`) |
+| Format | Behavior                                          |
+| ------ | ------------------------------------------------- |
+| PDF    | Stored and opened directly in the viewer          |
+| TXT    | Converted to PDF via `pdf-lib`                    |
+| DOCX   | Converted to PDF via Gotenberg (`localhost:3001`) |
 
 Features:
+
 - **View PDF** — in-browser preview
 - **Analyze** — extract plain text from uploaded files
 - **Form builder** — add text/checkbox/dropdown fields and export an interactive PDF
@@ -72,14 +73,14 @@ If DOCX conversion fails (Gotenberg not running), upload still succeeds — use 
 
 Environment lives in [`.env.local`](.env.local):
 
-| Variable | Purpose |
-|----------|---------|
-| `DATABASE_URL` | Postgres connection (`payme:payme@localhost:5432/payme`) |
-| `OPENAI_API_KEY` | AI provider (required for Morphic chat) |
-| `SEARCH_API=searxng` | Local SearXNG search |
-| `LOCAL_REDIS_URL` | Local Redis |
-| `DOCUMENTS_STORAGE_PATH` | Local file storage (default: `./storage`) |
-| `GOTENBERG_URL` | DOCX converter (default: `http://localhost:3001`) |
+| Variable                 | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `DATABASE_URL`           | Postgres connection (`payme:payme@localhost:5432/payme`) |
+| `OPENAI_API_KEY`         | AI provider (required for Morphic chat)                  |
+| `SEARCH_API=searxng`     | Local SearXNG search                                     |
+| `LOCAL_REDIS_URL`        | Local Redis                                              |
+| `DOCUMENTS_STORAGE_PATH` | Local file storage (default: `./storage`)                |
+| `GOTENBERG_URL`          | DOCX converter (default: `http://localhost:3001`)        |
 
 ## Architecture
 

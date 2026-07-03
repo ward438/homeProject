@@ -3,10 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/auth/get-current-user'
 import { extractText } from '@/lib/documents/analyze'
 import { convertToPdf } from '@/lib/documents/convert'
-import {
-  getDocumentById,
-  updateDocument
-} from '@/lib/documents/db'
+import { getDocumentById, updateDocument } from '@/lib/documents/db'
 import {
   readFileBuffer,
   resolveAbsolutePath,
@@ -56,8 +53,7 @@ export async function POST(_req: NextRequest, context: RouteContext) {
     return NextResponse.json({ document: updated })
   } catch (error) {
     console.error('[documents convert POST]', error)
-    const message =
-      error instanceof Error ? error.message : 'Conversion failed'
+    const message = error instanceof Error ? error.message : 'Conversion failed'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

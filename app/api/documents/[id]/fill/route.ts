@@ -53,11 +53,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
     }
 
     const documentId = createDocumentId()
-    const pdfPath = await savePdfFile(userId, documentId, filledBuffer, 'filled')
-    const filename = document.originalFilename.replace(
-      /\.pdf$/i,
-      '_filled.pdf'
+    const pdfPath = await savePdfFile(
+      userId,
+      documentId,
+      filledBuffer,
+      'filled'
     )
+    const filename = document.originalFilename.replace(/\.pdf$/i, '_filled.pdf')
 
     const created = await createDocument({
       id: documentId,
@@ -76,9 +78,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return NextResponse.json({ document: created })
   } catch (error) {
     console.error('[documents fill POST]', error)
-    return NextResponse.json(
-      { error: 'Failed to fill PDF' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fill PDF' }, { status: 500 })
   }
 }
