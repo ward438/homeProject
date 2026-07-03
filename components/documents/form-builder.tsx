@@ -973,8 +973,23 @@ export function FormBuilder({ sourceDocumentId, onExported }: FormBuilderProps) 
   // ---- auto-rebalance overflow rows ----------------------------------------
 
   useEffect(() => {
-    const { changed, fields: rebalanced, maxPage } = rebalanceOverflow(fields)
-    if (changed) {
+    // First sync static-text heights so the canvas shows the full container
+    // and the overflow calc uses accurate heights
+    let heightsChanged = false
+    const heightSynced = fields.map(f => {
+      if (f.type !== 'static-text') return f
+      const needed = approxStaticTextHeight(f)
+      if (needed > (f.height || 0)) {
+        heightsChanged = true
+        return { ...f, height: needed }
+      }
+      return f
+    })
+
+    const base = heightsChanged ? heightSynced : fields
+    const { changed, fields: rebalanced, maxPage } = rebalanceOverflow(base)
+
+    if (heightsChanged || changed) {
       setFields(rebalanced)
       setPageCount(c => Math.max(c, maxPage))
     }
