@@ -63,6 +63,7 @@ export function ReasoningSection({
     const prepared = toPreview(text)
     if (!content.isDone) {
       // Set once during streaming
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!preview) setPreview(prepared.slice(0, HEADER_PREVIEW_CHARS))
     } else {
       // On completion, ensure preview reflects the final string (single update)

@@ -18,7 +18,17 @@
     "backfill:file-keys": "bun run scripts/backfill-file-object-keys.ts",
     "test": "NODE_ENV=test vitest run",
     "test:watch": "vitest --watch",
-    "chat": "bun run scripts/chat-cli.ts"
+    "chat": "bun run scripts/chat-cli.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0"
+    ],
+    "*.{json,css,md,yml,yaml,html}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.77",
@@ -64,6 +74,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@tabler/icons-react": "^3.44.0",
     "@tailwindcss/typography": "^0.5.12",
+    "@testing-library/dom": "^10.4.1",
     "@tiptap/extension-color": "^3.27.1",
     "@tiptap/extension-text-align": "^3.27.1",
     "@tiptap/extension-text-style": "^3.27.1",
@@ -121,9 +132,11 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "pdfjs-dist": "^4.10.38",
     "postcss": "^8",
-    "prettier": "^3.6.2",
+    "prettier": "3.6.2",
     "tailwindcss": "^4.1.11",
     "tsx": "^4.20.3",
     "typescript": "^5",

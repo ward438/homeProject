@@ -8,7 +8,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_USER: payme
       POSTGRES_PASSWORD: payme
@@ -16,7 +16,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U payme"]
+      test: ['CMD-SHELL', 'pg_isready -U payme']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,7 +25,7 @@ services:
     image: redis:alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -34,7 +34,7 @@ services:
     image: searxng/searxng
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - '8080:8080'
     volumes:
       - ./searxng-limiter.toml:/etc/searxng/limiter.toml
       - ./searxng-settings.yml:/etc/searxng/settings.yml
@@ -44,7 +44,7 @@ services:
     image: gotenberg/gotenberg:8
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - '3001:3000'
     volumes:
       - ./storage:/storage
 

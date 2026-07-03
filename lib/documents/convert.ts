@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
 import { getGotenbergUrl } from './constants'
 
@@ -108,7 +108,11 @@ async function convertDocxViaGotenberg(
   const blob = new Blob([new Uint8Array(buffer)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   })
-  formData.append('files', blob, filename.endsWith('.docx') ? filename : `${filename}.docx`)
+  formData.append(
+    'files',
+    blob,
+    filename.endsWith('.docx') ? filename : `${filename}.docx`
+  )
 
   const response = await fetch(`${gotenbergUrl}/forms/libreoffice/convert`, {
     method: 'POST',
@@ -117,7 +121,9 @@ async function convertDocxViaGotenberg(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => response.statusText)
-    throw new Error(`Gotenberg conversion failed (${response.status}): ${detail}`)
+    throw new Error(
+      `Gotenberg conversion failed (${response.status}): ${detail}`
+    )
   }
 
   const arrayBuffer = await response.arrayBuffer()

@@ -1,5 +1,4 @@
 import fs from 'fs/promises'
-
 import mammoth from 'mammoth'
 
 const PDF_MIME = 'application/pdf'

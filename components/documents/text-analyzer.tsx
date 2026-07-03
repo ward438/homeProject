@@ -22,6 +22,7 @@ export function TextAnalyzer({ documentId }: TextAnalyzerProps) {
 
   useEffect(() => {
     if (!documentId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setText(null)
       setError(null)
       return

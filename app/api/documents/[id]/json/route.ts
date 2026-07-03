@@ -31,10 +31,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     })
   } catch (error) {
     console.error('[documents json GET]', error)
-    return NextResponse.json(
-      { error: 'Failed to read JSON' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to read JSON' }, { status: 500 })
   }
 }
 
@@ -78,7 +75,8 @@ export async function POST(req: NextRequest, context: RouteContext) {
     })
   } catch (error) {
     console.error('[documents json POST]', error)
-    const message = error instanceof Error ? error.message : 'Failed to save JSON'
+    const message =
+      error instanceof Error ? error.message : 'Failed to save JSON'
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

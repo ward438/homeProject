@@ -1,586 +1,1188 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Form Builder — 5 Layout Mockups</title>
-<style>
-  :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel2: #1e2230;
-    --border: #2c3140;
-    --text: #e8eaf0;
-    --muted: #9aa1b2;
-    --accent: #6c9eff;
-    --accent2: #7c5cff;
-    --green: #4cc38a;
-    --red: #e5534b;
-    --amber: #e0a83a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    padding-bottom: 120px;
-  }
-  a { color: var(--accent); text-decoration: none; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Form Builder — 5 Layout Mockups</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #171a21;
+        --panel2: #1e2230;
+        --border: #2c3140;
+        --text: #e8eaf0;
+        --muted: #9aa1b2;
+        --accent: #6c9eff;
+        --accent2: #7c5cff;
+        --green: #4cc38a;
+        --red: #e5534b;
+        --amber: #e0a83a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        padding-bottom: 120px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
 
-  /* Sticky nav */
-  .nav {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(15,17,21,0.95);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 24px;
-    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  }
-  .nav h1 { font-size: 16px; font-weight: 600; margin-right: 12px; }
-  .nav a {
-    font-size: 13px; padding: 6px 12px; border: 1px solid var(--border);
-    border-radius: 999px; color: var(--muted);
-  }
-  .nav a:hover { color: var(--text); border-color: var(--accent); }
+      /* Sticky nav */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(15, 17, 21, 0.95);
+        border-bottom: 1px solid var(--border);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .nav h1 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-right: 12px;
+      }
+      .nav a {
+        font-size: 13px;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--muted);
+      }
+      .nav a:hover {
+        color: var(--text);
+        border-color: var(--accent);
+      }
 
-  .option {
-    max-width: 1180px; margin: 48px auto; padding: 0 24px;
-  }
-  .option-header { margin-bottom: 16px; }
-  .option-header .kicker {
-    font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--accent); font-weight: 700;
-  }
-  .option-header h2 { font-size: 22px; margin: 4px 0 6px; }
-  .option-header p { color: var(--muted); font-size: 14px; max-width: 760px; line-height: 1.5; }
+      .option {
+        max-width: 1180px;
+        margin: 48px auto;
+        padding: 0 24px;
+      }
+      .option-header {
+        margin-bottom: 16px;
+      }
+      .option-header .kicker {
+        font-size: 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .option-header h2 {
+        font-size: 22px;
+        margin: 4px 0 6px;
+      }
+      .option-header p {
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 760px;
+        line-height: 1.5;
+      }
 
-  .frame {
-    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-    background: var(--panel);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  }
-  .frame-bar {
-    display: flex; align-items: center; gap: 6px;
-    padding: 10px 14px; border-bottom: 1px solid var(--border);
-    background: var(--panel2);
-  }
-  .dot { width: 10px; height: 10px; border-radius: 50%; }
-  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
-  .frame-bar span { font-size: 12px; color: var(--muted); margin-left: 10px; }
+      .frame {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--panel);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+      .frame-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel2);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .dot.r {
+        background: #ff5f57;
+      }
+      .dot.y {
+        background: #febc2e;
+      }
+      .dot.g {
+        background: #28c840;
+      }
+      .frame-bar span {
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: 10px;
+      }
 
-  /* shared bits */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12.5px; font-weight: 600; padding: 7px 14px;
-    border-radius: 6px; border: 1px solid var(--border);
-    background: transparent; color: var(--text); cursor: default;
-  }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #0b1020; }
-  .btn.subtle { color: var(--muted); border-style: dashed; }
-  .btn.danger { color: var(--red); border-color: rgba(229,83,75,0.4); }
-  .chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11px; font-weight: 600; padding: 3px 9px;
-    border-radius: 999px; border: 1px solid var(--border); color: var(--muted);
-  }
-  .chip.text  { color: #6c9eff; border-color: rgba(108,158,255,.45); }
-  .chip.check { color: #4cc38a; border-color: rgba(76,195,138,.45); }
-  .chip.drop  { color: #e0a83a; border-color: rgba(224,168,58,.45); }
-  .chip.date  { color: #c58fff; border-color: rgba(197,143,255,.45); }
+      /* shared bits */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        padding: 7px 14px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        cursor: default;
+      }
+      .btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #0b1020;
+      }
+      .btn.subtle {
+        color: var(--muted);
+        border-style: dashed;
+      }
+      .btn.danger {
+        color: var(--red);
+        border-color: rgba(229, 83, 75, 0.4);
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+      }
+      .chip.text {
+        color: #6c9eff;
+        border-color: rgba(108, 158, 255, 0.45);
+      }
+      .chip.check {
+        color: #4cc38a;
+        border-color: rgba(76, 195, 138, 0.45);
+      }
+      .chip.drop {
+        color: #e0a83a;
+        border-color: rgba(224, 168, 58, 0.45);
+      }
+      .chip.date {
+        color: #c58fff;
+        border-color: rgba(197, 143, 255, 0.45);
+      }
 
-  .mock-input {
-    background: #10131a; border: 1px solid var(--border); border-radius: 6px;
-    padding: 8px 10px; font-size: 12.5px; color: var(--muted);
-  }
-  .mock-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: block; }
+      .mock-input {
+        background: #10131a;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .mock-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        display: block;
+      }
 
-  /* ============ OPTION 1: Stacked row cards ============ */
-  .o1-body { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-  .o1-row {
-    border: 1px solid var(--border); border-radius: 10px; background: var(--panel2);
-    padding: 12px 14px;
-  }
-  .o1-row-head {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-  }
-  .o1-row-head .grip { color: var(--muted); font-size: 14px; letter-spacing: 2px; }
-  .o1-row-head .title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-  .o1-row-head .spacer { flex: 1; }
-  .o1-cols { display: flex; gap: 12px; }
-  .o1-col {
-    flex: 1; border: 1px solid var(--border); border-radius: 8px;
-    background: var(--panel); padding: 12px;
-  }
-  .o1-col .field-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .o1-col .field-name { font-size: 13px; font-weight: 600; }
-  .o1-addcol {
-    width: 110px; border: 1px dashed var(--border); border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 12px; font-weight: 600;
-  }
+      /* ============ OPTION 1: Stacked row cards ============ */
+      .o1-body {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .o1-row {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel2);
+        padding: 12px 14px;
+      }
+      .o1-row-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .o1-row-head .grip {
+        color: var(--muted);
+        font-size: 14px;
+        letter-spacing: 2px;
+      }
+      .o1-row-head .title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .o1-row-head .spacer {
+        flex: 1;
+      }
+      .o1-cols {
+        display: flex;
+        gap: 12px;
+      }
+      .o1-col {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 12px;
+      }
+      .o1-col .field-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .o1-col .field-name {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .o1-addcol {
+        width: 110px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
 
-  /* ============ OPTION 2: Palette + canvas ============ */
-  .o2-body { display: flex; min-height: 460px; }
-  .o2-palette {
-    width: 210px; border-right: 1px solid var(--border); padding: 16px;
-    display: flex; flex-direction: column; gap: 8px; background: var(--panel2);
-  }
-  .o2-palette h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
-  .o2-item {
-    display: flex; align-items: center; gap: 10px;
-    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-    font-size: 13px; background: var(--panel); cursor: grab;
-  }
-  .o2-item .ico { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
-  .o2-canvas { flex: 1; padding: 20px; }
-  .o2-canvas-inner {
-    border: 1px dashed var(--border); border-radius: 10px; padding: 16px;
-    display: flex; flex-direction: column; gap: 12px; min-height: 400px;
-  }
-  .o2-row { display: flex; gap: 12px; align-items: stretch; }
-  .o2-cell {
-    flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-    background: var(--panel2); position: relative;
-  }
-  .o2-cell.drop-target { border: 2px dashed var(--accent); background: rgba(108,158,255,0.08); display:flex; align-items:center; justify-content:center; color: var(--accent); font-size: 12.5px; font-weight: 600; }
-  .o2-cell .field-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+      /* ============ OPTION 2: Palette + canvas ============ */
+      .o2-body {
+        display: flex;
+        min-height: 460px;
+      }
+      .o2-palette {
+        width: 210px;
+        border-right: 1px solid var(--border);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: var(--panel2);
+      }
+      .o2-palette h3 {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .o2-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 13px;
+        background: var(--panel);
+        cursor: grab;
+      }
+      .o2-item .ico {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+      }
+      .o2-canvas {
+        flex: 1;
+        padding: 20px;
+      }
+      .o2-canvas-inner {
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 400px;
+      }
+      .o2-row {
+        display: flex;
+        gap: 12px;
+        align-items: stretch;
+      }
+      .o2-cell {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: var(--panel2);
+        position: relative;
+      }
+      .o2-cell.drop-target {
+        border: 2px dashed var(--accent);
+        background: rgba(108, 158, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      .o2-cell .field-name {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
-  /* ============ OPTION 3: WYSIWYG page canvas ============ */
-  .o3-body { display: flex; flex-direction: column; }
-  .o3-toolbar {
-    display: flex; align-items: center; gap: 8px; padding: 12px 16px;
-    border-bottom: 1px solid var(--border); background: var(--panel2); flex-wrap: wrap;
-  }
-  .o3-toolbar .sep { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
-  .o3-stage { display: flex; justify-content: center; padding: 26px; background: #0a0c10; }
-  .o3-page {
-    width: 480px; background: #ffffff; color: #1a1a1a; border-radius: 4px;
-    padding: 28px; box-shadow: 0 10px 34px rgba(0,0,0,0.6);
-  }
-  .o3-page h4 { font-size: 16px; margin-bottom: 4px; }
-  .o3-page .pg { font-size: 10px; color: #888; margin-bottom: 18px; }
-  .o3-prow { display: flex; gap: 12px; margin-bottom: 14px; }
-  .o3-pfield { flex: 1; position: relative; }
-  .o3-pfield.selected { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
-  .o3-pfield label { display: block; font-size: 10px; color: #444; margin-bottom: 3px; font-weight: 600; }
-  .o3-pfield .box { border: 1px solid #999; border-radius: 2px; height: 26px; background: #fafafa; }
-  .o3-pfield .cbx { width: 14px; height: 14px; border: 1px solid #999; border-radius: 2px; display: inline-block; vertical-align: middle; margin-right: 6px; background:#fafafa; }
-  .o3-pfield .cbl { font-size: 11px; color: #333; }
-  .o3-addrow {
-    border: 1px dashed #bbb; border-radius: 4px; text-align: center;
-    padding: 8px; font-size: 11px; color: #888; font-weight: 600;
-  }
-  .o3-float {
-    position: absolute; top: -30px; right: 0; display: flex; gap: 4px;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px;
-  }
-  .o3-float span { font-size: 10px; padding: 2px 6px; color: var(--muted); }
-  .o3-float span.on { color: var(--accent); font-weight: 700; }
+      /* ============ OPTION 3: WYSIWYG page canvas ============ */
+      .o3-body {
+        display: flex;
+        flex-direction: column;
+      }
+      .o3-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel2);
+        flex-wrap: wrap;
+      }
+      .o3-toolbar .sep {
+        width: 1px;
+        height: 22px;
+        background: var(--border);
+        margin: 0 6px;
+      }
+      .o3-stage {
+        display: flex;
+        justify-content: center;
+        padding: 26px;
+        background: #0a0c10;
+      }
+      .o3-page {
+        width: 480px;
+        background: #ffffff;
+        color: #1a1a1a;
+        border-radius: 4px;
+        padding: 28px;
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
+      }
+      .o3-page h4 {
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+      .o3-page .pg {
+        font-size: 10px;
+        color: #888;
+        margin-bottom: 18px;
+      }
+      .o3-prow {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .o3-pfield {
+        flex: 1;
+        position: relative;
+      }
+      .o3-pfield.selected {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+      .o3-pfield label {
+        display: block;
+        font-size: 10px;
+        color: #444;
+        margin-bottom: 3px;
+        font-weight: 600;
+      }
+      .o3-pfield .box {
+        border: 1px solid #999;
+        border-radius: 2px;
+        height: 26px;
+        background: #fafafa;
+      }
+      .o3-pfield .cbx {
+        width: 14px;
+        height: 14px;
+        border: 1px solid #999;
+        border-radius: 2px;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 6px;
+        background: #fafafa;
+      }
+      .o3-pfield .cbl {
+        font-size: 11px;
+        color: #333;
+      }
+      .o3-addrow {
+        border: 1px dashed #bbb;
+        border-radius: 4px;
+        text-align: center;
+        padding: 8px;
+        font-size: 11px;
+        color: #888;
+        font-weight: 600;
+      }
+      .o3-float {
+        position: absolute;
+        top: -30px;
+        right: 0;
+        display: flex;
+        gap: 4px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 3px 6px;
+      }
+      .o3-float span {
+        font-size: 10px;
+        padding: 2px 6px;
+        color: var(--muted);
+      }
+      .o3-float span.on {
+        color: var(--accent);
+        font-weight: 700;
+      }
 
-  /* ============ OPTION 4: Spreadsheet / grid ============ */
-  .o4-body { padding: 20px; }
-  .o4-toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-  .o4-table { width: 100%; border-collapse: collapse; }
-  .o4-table th {
-    font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
-    border-bottom: 1px solid var(--border); padding: 8px 10px; text-align: left; font-weight: 700;
-  }
-  .o4-table td {
-    border-bottom: 1px solid var(--border); padding: 10px; vertical-align: top; font-size: 13px;
-  }
-  .o4-rowlabel { color: var(--muted); font-size: 12px; white-space: nowrap; }
-  .o4-cellcard {
-    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--panel2);
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .o4-cellcard .nm { font-weight: 600; font-size: 12.5px; }
-  .o4-empty {
-    border: 1px dashed var(--border); border-radius: 8px; padding: 14px;
-    text-align: center; color: var(--muted); font-size: 12px;
-  }
-  .o4-span2 { grid-column: span 2; }
+      /* ============ OPTION 4: Spreadsheet / grid ============ */
+      .o4-body {
+        padding: 20px;
+      }
+      .o4-toolbar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .o4-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .o4-table th {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+        font-weight: 700;
+      }
+      .o4-table td {
+        border-bottom: 1px solid var(--border);
+        padding: 10px;
+        vertical-align: top;
+        font-size: 13px;
+      }
+      .o4-rowlabel {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .o4-cellcard {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: var(--panel2);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .o4-cellcard .nm {
+        font-weight: 600;
+        font-size: 12.5px;
+      }
+      .o4-empty {
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .o4-span2 {
+        grid-column: span 2;
+      }
 
-  /* ============ OPTION 5: Canvas + inspector ============ */
-  .o5-body { display: flex; min-height: 480px; }
-  .o5-main { flex: 1; padding: 18px; border-right: 1px solid var(--border); }
-  .o5-main .rows { display: flex; flex-direction: column; gap: 10px; }
-  .o5-row {
-    display: flex; gap: 10px; border: 1px solid var(--border); border-radius: 8px;
-    padding: 10px; background: var(--panel2); align-items: stretch;
-  }
-  .o5-rownum {
-    width: 26px; display: flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 11px; font-weight: 700;
-    border-right: 1px solid var(--border); margin-right: 2px;
-  }
-  .o5-field {
-    flex: 1; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
-    background: var(--panel); font-size: 12.5px; display: flex; align-items: center; gap: 8px;
-  }
-  .o5-field.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-  .o5-inspector { width: 300px; padding: 18px; background: var(--panel2); }
-  .o5-inspector h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 14px; }
-  .o5-group { margin-bottom: 14px; }
-  .o5-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .o5-seg { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .o5-seg span { flex: 1; text-align: center; font-size: 11.5px; padding: 7px 0; color: var(--muted); }
-  .o5-seg span.on { background: var(--accent); color: #0b1020; font-weight: 700; }
+      /* ============ OPTION 5: Canvas + inspector ============ */
+      .o5-body {
+        display: flex;
+        min-height: 480px;
+      }
+      .o5-main {
+        flex: 1;
+        padding: 18px;
+        border-right: 1px solid var(--border);
+      }
+      .o5-main .rows {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .o5-row {
+        display: flex;
+        gap: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        background: var(--panel2);
+        align-items: stretch;
+      }
+      .o5-rownum {
+        width: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        border-right: 1px solid var(--border);
+        margin-right: 2px;
+      }
+      .o5-field {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        background: var(--panel);
+        font-size: 12.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .o5-field.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+      }
+      .o5-inspector {
+        width: 300px;
+        padding: 18px;
+        background: var(--panel2);
+      }
+      .o5-inspector h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      .o5-group {
+        margin-bottom: 14px;
+      }
+      .o5-two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .o5-seg {
+        display: flex;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .o5-seg span {
+        flex: 1;
+        text-align: center;
+        font-size: 11.5px;
+        padding: 7px 0;
+        color: var(--muted);
+      }
+      .o5-seg span.on {
+        background: var(--accent);
+        color: #0b1020;
+        font-weight: 700;
+      }
 
-  .footnote { max-width: 1180px; margin: 40px auto 0; padding: 0 24px; color: var(--muted); font-size: 13px; line-height: 1.6; }
-</style>
-</head>
-<body>
+      .footnote {
+        max-width: 1180px;
+        margin: 40px auto 0;
+        padding: 0 24px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <h1>Form Builder — 5 layout options</h1>
+      <a href="#option1">1 · Row cards</a>
+      <a href="#option2">2 · Palette + canvas</a>
+      <a href="#option3">3 · WYSIWYG page</a>
+      <a href="#option4">4 · Grid table</a>
+      <a href="#option5">5 · Canvas + inspector</a>
+    </nav>
 
-<nav class="nav">
-  <h1>Form Builder — 5 layout options</h1>
-  <a href="#option1">1 · Row cards</a>
-  <a href="#option2">2 · Palette + canvas</a>
-  <a href="#option3">3 · WYSIWYG page</a>
-  <a href="#option4">4 · Grid table</a>
-  <a href="#option5">5 · Canvas + inspector</a>
-</nav>
-
-<!-- ================= OPTION 1 ================= -->
-<section class="option" id="option1">
-  <div class="option-header">
-    <div class="kicker">Option 1</div>
-    <h2>Stacked Row Cards</h2>
-    <p>
-      The form is a vertical list of <strong>rows</strong>. Each row card holds 1–4 <strong>columns</strong>,
-      and each column holds one field. "Add row" appends a new card; "+ Column" splits the row.
-      Closest to the current UI, easiest to build. No X/Y coordinates at all — position comes from row/column order.
-    </p>
-  </div>
-  <div class="frame">
-    <div class="frame-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Edit form — My Form</span></div>
-    <div class="o1-body">
-
-      <div class="o1-row">
-        <div class="o1-row-head">
-          <span class="grip">⠿</span><span class="title">Row 1 · 2 columns</span>
-          <span class="spacer"></span>
-          <span class="btn subtle">+ Column</span><span class="btn danger">✕</span>
-        </div>
-        <div class="o1-cols">
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">First Name</span><span class="chip text">Text</span></div>
-            <div class="mock-input">Label, type, height…</div>
-          </div>
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">Last Name</span><span class="chip text">Text</span></div>
-            <div class="mock-input">Label, type, height…</div>
-          </div>
-        </div>
+    <!-- ================= OPTION 1 ================= -->
+    <section class="option" id="option1">
+      <div class="option-header">
+        <div class="kicker">Option 1</div>
+        <h2>Stacked Row Cards</h2>
+        <p>
+          The form is a vertical list of <strong>rows</strong>. Each row card
+          holds 1–4 <strong>columns</strong>, and each column holds one field.
+          "Add row" appends a new card; "+ Column" splits the row. Closest to
+          the current UI, easiest to build. No X/Y coordinates at all — position
+          comes from row/column order.
+        </p>
       </div>
-
-      <div class="o1-row">
-        <div class="o1-row-head">
-          <span class="grip">⠿</span><span class="title">Row 2 · 3 columns</span>
-          <span class="spacer"></span>
-          <span class="btn subtle">+ Column</span><span class="btn danger">✕</span>
+      <div class="frame">
+        <div class="frame-bar">
+          <div class="dot r"></div>
+          <div class="dot y"></div>
+          <div class="dot g"></div>
+          <span>Edit form — My Form</span>
         </div>
-        <div class="o1-cols">
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">City</span><span class="chip text">Text</span></div>
-            <div class="mock-input">Label, type, height…</div>
-          </div>
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">State</span><span class="chip drop">Dropdown</span></div>
-            <div class="mock-input">Options: AL, AK, AZ…</div>
-          </div>
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">ZIP</span><span class="chip text">Text</span></div>
-            <div class="mock-input">Label, type, height…</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="o1-row">
-        <div class="o1-row-head">
-          <span class="grip">⠿</span><span class="title">Row 3 · 1 column</span>
-          <span class="spacer"></span>
-          <span class="btn subtle">+ Column</span><span class="btn danger">✕</span>
-        </div>
-        <div class="o1-cols">
-          <div class="o1-col">
-            <div class="field-head"><span class="field-name">I agree to the terms</span><span class="chip check">Checkbox</span></div>
-            <div class="mock-input">Label, type…</div>
-          </div>
-          <div class="o1-addcol">+ Column</div>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px;">
-        <span class="btn">+ Add row</span>
-        <span class="btn primary">Export PDF form</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= OPTION 2 ================= -->
-<section class="option" id="option2">
-  <div class="option-header">
-    <div class="kicker">Option 2</div>
-    <h2>Field Palette + Drop Canvas</h2>
-    <p>
-      A palette of field types on the left (Text, Checkbox, Dropdown, Date, Signature).
-      Drag a field into a row on the canvas — dropping beside an existing field creates a new column
-      in that row; dropping below creates a new row. Feels like classic form-builder tools (Typeform/Google Forms style).
-    </p>
-  </div>
-  <div class="frame">
-    <div class="frame-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Edit form — My Form</span></div>
-    <div class="o2-body">
-      <div class="o2-palette">
-        <h3>Fields</h3>
-        <div class="o2-item"><span class="ico" style="background:rgba(108,158,255,.15); color:#6c9eff;">T</span> Text input</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(76,195,138,.15); color:#4cc38a;">☑</span> Checkbox</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(224,168,58,.15); color:#e0a83a;">▾</span> Dropdown</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(197,143,255,.15); color:#c58fff;">📅</span> Date</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(255,255,255,.08); color:#aaa;">✍</span> Signature</div>
-        <h3 style="margin-top:14px;">Layout</h3>
-        <div class="o2-item"><span class="ico" style="background:rgba(255,255,255,.08);">▤</span> Row</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(255,255,255,.08);">▥</span> 2 columns</div>
-        <div class="o2-item"><span class="ico" style="background:rgba(255,255,255,.08);">▦</span> 3 columns</div>
-      </div>
-      <div class="o2-canvas">
-        <div class="o2-canvas-inner">
-          <div class="o2-row">
-            <div class="o2-cell">
-              <div class="field-name">Full Name <span class="chip text">Text</span></div>
-              <div class="mock-input">&nbsp;</div>
+        <div class="o1-body">
+          <div class="o1-row">
+            <div class="o1-row-head">
+              <span class="grip">⠿</span
+              ><span class="title">Row 1 · 2 columns</span>
+              <span class="spacer"></span>
+              <span class="btn subtle">+ Column</span
+              ><span class="btn danger">✕</span>
+            </div>
+            <div class="o1-cols">
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">First Name</span
+                  ><span class="chip text">Text</span>
+                </div>
+                <div class="mock-input">Label, type, height…</div>
+              </div>
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">Last Name</span
+                  ><span class="chip text">Text</span>
+                </div>
+                <div class="mock-input">Label, type, height…</div>
+              </div>
             </div>
           </div>
-          <div class="o2-row">
-            <div class="o2-cell">
-              <div class="field-name">Email <span class="chip text">Text</span></div>
-              <div class="mock-input">&nbsp;</div>
+
+          <div class="o1-row">
+            <div class="o1-row-head">
+              <span class="grip">⠿</span
+              ><span class="title">Row 2 · 3 columns</span>
+              <span class="spacer"></span>
+              <span class="btn subtle">+ Column</span
+              ><span class="btn danger">✕</span>
             </div>
-            <div class="o2-cell">
-              <div class="field-name">Phone <span class="chip text">Text</span></div>
-              <div class="mock-input">&nbsp;</div>
+            <div class="o1-cols">
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">City</span
+                  ><span class="chip text">Text</span>
+                </div>
+                <div class="mock-input">Label, type, height…</div>
+              </div>
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">State</span
+                  ><span class="chip drop">Dropdown</span>
+                </div>
+                <div class="mock-input">Options: AL, AK, AZ…</div>
+              </div>
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">ZIP</span
+                  ><span class="chip text">Text</span>
+                </div>
+                <div class="mock-input">Label, type, height…</div>
+              </div>
             </div>
           </div>
-          <div class="o2-row">
-            <div class="o2-cell">
-              <div class="field-name">Branch of Service <span class="chip drop">Dropdown</span></div>
-              <div class="mock-input">Army ▾</div>
+
+          <div class="o1-row">
+            <div class="o1-row-head">
+              <span class="grip">⠿</span
+              ><span class="title">Row 3 · 1 column</span>
+              <span class="spacer"></span>
+              <span class="btn subtle">+ Column</span
+              ><span class="btn danger">✕</span>
             </div>
-            <div class="o2-cell drop-target">Drop field here → new column</div>
+            <div class="o1-cols">
+              <div class="o1-col">
+                <div class="field-head">
+                  <span class="field-name">I agree to the terms</span
+                  ><span class="chip check">Checkbox</span>
+                </div>
+                <div class="mock-input">Label, type…</div>
+              </div>
+              <div class="o1-addcol">+ Column</div>
+            </div>
           </div>
-          <div class="o2-row">
-            <div class="o2-cell drop-target" style="min-height:52px;">Drop field here → new row</div>
+
+          <div style="display: flex; gap: 10px">
+            <span class="btn">+ Add row</span>
+            <span class="btn primary">Export PDF form</span>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- ================= OPTION 3 ================= -->
-<section class="option" id="option3">
-  <div class="option-header">
-    <div class="kicker">Option 3</div>
-    <h2>WYSIWYG Page Canvas</h2>
-    <p>
-      The builder shows the actual white PDF page (US Letter proportions) exactly as it will export.
-      A toolbar adds rows, columns, and field types. Click a field on the page to select it —
-      a floating mini-toolbar switches its type or splits its row. What you see is literally the exported PDF.
+    <!-- ================= OPTION 2 ================= -->
+    <section class="option" id="option2">
+      <div class="option-header">
+        <div class="kicker">Option 2</div>
+        <h2>Field Palette + Drop Canvas</h2>
+        <p>
+          A palette of field types on the left (Text, Checkbox, Dropdown, Date,
+          Signature). Drag a field into a row on the canvas — dropping beside an
+          existing field creates a new column in that row; dropping below
+          creates a new row. Feels like classic form-builder tools
+          (Typeform/Google Forms style).
+        </p>
+      </div>
+      <div class="frame">
+        <div class="frame-bar">
+          <div class="dot r"></div>
+          <div class="dot y"></div>
+          <div class="dot g"></div>
+          <span>Edit form — My Form</span>
+        </div>
+        <div class="o2-body">
+          <div class="o2-palette">
+            <h3>Fields</h3>
+            <div class="o2-item">
+              <span
+                class="ico"
+                style="background: rgba(108, 158, 255, 0.15); color: #6c9eff"
+                >T</span
+              >
+              Text input
+            </div>
+            <div class="o2-item">
+              <span
+                class="ico"
+                style="background: rgba(76, 195, 138, 0.15); color: #4cc38a"
+                >☑</span
+              >
+              Checkbox
+            </div>
+            <div class="o2-item">
+              <span
+                class="ico"
+                style="background: rgba(224, 168, 58, 0.15); color: #e0a83a"
+                >▾</span
+              >
+              Dropdown
+            </div>
+            <div class="o2-item">
+              <span
+                class="ico"
+                style="background: rgba(197, 143, 255, 0.15); color: #c58fff"
+                >📅</span
+              >
+              Date
+            </div>
+            <div class="o2-item">
+              <span
+                class="ico"
+                style="background: rgba(255, 255, 255, 0.08); color: #aaa"
+                >✍</span
+              >
+              Signature
+            </div>
+            <h3 style="margin-top: 14px">Layout</h3>
+            <div class="o2-item">
+              <span class="ico" style="background: rgba(255, 255, 255, 0.08)"
+                >▤</span
+              >
+              Row
+            </div>
+            <div class="o2-item">
+              <span class="ico" style="background: rgba(255, 255, 255, 0.08)"
+                >▥</span
+              >
+              2 columns
+            </div>
+            <div class="o2-item">
+              <span class="ico" style="background: rgba(255, 255, 255, 0.08)"
+                >▦</span
+              >
+              3 columns
+            </div>
+          </div>
+          <div class="o2-canvas">
+            <div class="o2-canvas-inner">
+              <div class="o2-row">
+                <div class="o2-cell">
+                  <div class="field-name">
+                    Full Name <span class="chip text">Text</span>
+                  </div>
+                  <div class="mock-input">&nbsp;</div>
+                </div>
+              </div>
+              <div class="o2-row">
+                <div class="o2-cell">
+                  <div class="field-name">
+                    Email <span class="chip text">Text</span>
+                  </div>
+                  <div class="mock-input">&nbsp;</div>
+                </div>
+                <div class="o2-cell">
+                  <div class="field-name">
+                    Phone <span class="chip text">Text</span>
+                  </div>
+                  <div class="mock-input">&nbsp;</div>
+                </div>
+              </div>
+              <div class="o2-row">
+                <div class="o2-cell">
+                  <div class="field-name">
+                    Branch of Service <span class="chip drop">Dropdown</span>
+                  </div>
+                  <div class="mock-input">Army ▾</div>
+                </div>
+                <div class="o2-cell drop-target">
+                  Drop field here → new column
+                </div>
+              </div>
+              <div class="o2-row">
+                <div class="o2-cell drop-target" style="min-height: 52px">
+                  Drop field here → new row
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OPTION 3 ================= -->
+    <section class="option" id="option3">
+      <div class="option-header">
+        <div class="kicker">Option 3</div>
+        <h2>WYSIWYG Page Canvas</h2>
+        <p>
+          The builder shows the actual white PDF page (US Letter proportions)
+          exactly as it will export. A toolbar adds rows, columns, and field
+          types. Click a field on the page to select it — a floating
+          mini-toolbar switches its type or splits its row. What you see is
+          literally the exported PDF.
+        </p>
+      </div>
+      <div class="frame">
+        <div class="frame-bar">
+          <div class="dot r"></div>
+          <div class="dot y"></div>
+          <div class="dot g"></div>
+          <span>Edit form — My Form</span>
+        </div>
+        <div class="o3-body">
+          <div class="o3-toolbar">
+            <span class="btn">+ Row</span>
+            <span class="btn">+ Column in row</span>
+            <span class="sep"></span>
+            <span class="btn">T Text</span>
+            <span class="btn">☑ Checkbox</span>
+            <span class="btn">▾ Dropdown</span>
+            <span class="sep"></span>
+            <span class="btn">Page 1 ▾</span>
+            <span style="flex: 1"></span>
+            <span class="btn primary">Export PDF form</span>
+          </div>
+          <div class="o3-stage">
+            <div class="o3-page">
+              <h4>My Form</h4>
+              <div class="pg">Page 1</div>
+              <div class="o3-prow">
+                <div class="o3-pfield">
+                  <label>FIRST NAME</label>
+                  <div class="box"></div>
+                </div>
+                <div class="o3-pfield selected">
+                  <div class="o3-float">
+                    <span class="on">Text</span><span>☑</span><span>▾</span
+                    ><span>✕</span>
+                  </div>
+                  <label>LAST NAME</label>
+                  <div class="box"></div>
+                </div>
+              </div>
+              <div class="o3-prow">
+                <div class="o3-pfield">
+                  <label>ADDRESS</label>
+                  <div class="box"></div>
+                </div>
+              </div>
+              <div class="o3-prow">
+                <div class="o3-pfield">
+                  <label>CITY</label>
+                  <div class="box"></div>
+                </div>
+                <div class="o3-pfield">
+                  <label>STATE</label>
+                  <div class="box"></div>
+                </div>
+                <div class="o3-pfield">
+                  <label>ZIP</label>
+                  <div class="box"></div>
+                </div>
+              </div>
+              <div class="o3-prow">
+                <div class="o3-pfield">
+                  <span class="cbx"></span
+                  ><span class="cbl"
+                    >I certify the above information is true</span
+                  >
+                </div>
+              </div>
+              <div class="o3-addrow">+ Add row</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OPTION 4 ================= -->
+    <section class="option" id="option4">
+      <div class="option-header">
+        <div class="kicker">Option 4</div>
+        <h2>Grid / Spreadsheet Table</h2>
+        <p>
+          Rows and columns as a literal table: each table row = a PDF row, each
+          cell = a field. Toolbar buttons add rows or columns; empty cells show
+          a dashed "+" placeholder. Very dense and fast for keyboard-heavy
+          editing of large forms — no dragging needed.
+        </p>
+      </div>
+      <div class="frame">
+        <div class="frame-bar">
+          <div class="dot r"></div>
+          <div class="dot y"></div>
+          <div class="dot g"></div>
+          <span>Edit form — My Form</span>
+        </div>
+        <div class="o4-body">
+          <div class="o4-toolbar">
+            <span class="btn">+ Row</span>
+            <span class="btn">+ Column</span>
+            <span class="btn">− Column</span>
+            <span style="flex: 1"></span>
+            <span class="btn">Preview</span>
+            <span class="btn primary">Export PDF form</span>
+          </div>
+          <table class="o4-table">
+            <thead>
+              <tr>
+                <th style="width: 70px">Row</th>
+                <th>Column 1</th>
+                <th>Column 2</th>
+                <th>Column 3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="o4-rowlabel">Row 1 ⠿</td>
+                <td>
+                  <div class="o4-cellcard">
+                    <span class="nm">First Name</span
+                    ><span class="chip text">Text</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="o4-cellcard">
+                    <span class="nm">Last Name</span
+                    ><span class="chip text">Text</span>
+                  </div>
+                </td>
+                <td><div class="o4-empty">+ field</div></td>
+              </tr>
+              <tr>
+                <td class="o4-rowlabel">Row 2 ⠿</td>
+                <td colspan="3">
+                  <div class="o4-cellcard">
+                    <span class="nm">Mailing Address</span
+                    ><span class="chip text">Text · spans all columns</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="o4-rowlabel">Row 3 ⠿</td>
+                <td>
+                  <div class="o4-cellcard">
+                    <span class="nm">City</span
+                    ><span class="chip text">Text</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="o4-cellcard">
+                    <span class="nm">State</span
+                    ><span class="chip drop">Dropdown</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="o4-cellcard">
+                    <span class="nm">ZIP</span
+                    ><span class="chip text">Text</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td class="o4-rowlabel">Row 4 ⠿</td>
+                <td colspan="3">
+                  <div class="o4-cellcard">
+                    <span class="nm">I agree to the terms and conditions</span
+                    ><span class="chip check">Checkbox</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OPTION 5 ================= -->
+    <section class="option" id="option5">
+      <div class="option-header">
+        <div class="kicker">Option 5</div>
+        <h2>Compact Canvas + Right Inspector</h2>
+        <p>
+          Left: a compact structural view — numbered rows containing field
+          pills; click "+" inside a row to add a column, or "+ Add row" below.
+          Right: an inspector panel that edits whatever is selected (label,
+          type, options, height, column span). Keeps the field list uncluttered
+          because all settings live in the inspector.
+        </p>
+      </div>
+      <div class="frame">
+        <div class="frame-bar">
+          <div class="dot r"></div>
+          <div class="dot y"></div>
+          <div class="dot g"></div>
+          <span>Edit form — My Form</span>
+        </div>
+        <div class="o5-body">
+          <div class="o5-main">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+              "
+            >
+              <span style="font-size: 13px; font-weight: 700"
+                >Structure — Page 1</span
+              >
+              <span class="btn primary">Export PDF form</span>
+            </div>
+            <div class="rows">
+              <div class="o5-row">
+                <div class="o5-rownum">1</div>
+                <div class="o5-field">
+                  <span class="chip text">T</span> First Name
+                </div>
+                <div class="o5-field selected">
+                  <span class="chip text">T</span> Last Name
+                </div>
+                <span class="btn subtle">+</span>
+              </div>
+              <div class="o5-row">
+                <div class="o5-rownum">2</div>
+                <div class="o5-field">
+                  <span class="chip text">T</span> Mailing Address
+                </div>
+                <span class="btn subtle">+</span>
+              </div>
+              <div class="o5-row">
+                <div class="o5-rownum">3</div>
+                <div class="o5-field">
+                  <span class="chip text">T</span> City
+                </div>
+                <div class="o5-field">
+                  <span class="chip drop">▾</span> State
+                </div>
+                <div class="o5-field"><span class="chip text">T</span> ZIP</div>
+                <span class="btn subtle">+</span>
+              </div>
+              <div class="o5-row">
+                <div class="o5-rownum">4</div>
+                <div class="o5-field">
+                  <span class="chip check">☑</span> I agree to the terms
+                </div>
+                <span class="btn subtle">+</span>
+              </div>
+              <span class="btn" style="align-self: flex-start">+ Add row</span>
+            </div>
+          </div>
+          <div class="o5-inspector">
+            <h3>Field — Last Name</h3>
+            <div class="o5-group">
+              <span class="mock-label">Label</span>
+              <div class="mock-input" style="width: 100%; color: var(--text)">
+                Last Name
+              </div>
+            </div>
+            <div class="o5-group">
+              <span class="mock-label">Type</span>
+              <div class="o5-seg">
+                <span class="on">Text</span><span>Check</span><span>Drop</span>
+              </div>
+            </div>
+            <div class="o5-group o5-two">
+              <div>
+                <span class="mock-label">Row</span>
+                <div class="mock-input">1</div>
+              </div>
+              <div>
+                <span class="mock-label">Column</span>
+                <div class="mock-input">2 of 2</div>
+              </div>
+            </div>
+            <div class="o5-group o5-two">
+              <div>
+                <span class="mock-label">Height</span>
+                <div class="mock-input">24</div>
+              </div>
+              <div>
+                <span class="mock-label">Span</span>
+                <div class="mock-input">1 column</div>
+              </div>
+            </div>
+            <div class="o5-group">
+              <span class="mock-label">Page</span>
+              <div class="mock-input">Page 1</div>
+            </div>
+            <span
+              class="btn danger"
+              style="width: 100%; justify-content: center"
+              >Delete field</span
+            >
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footnote">
+      All five options share the same underlying model: the form is
+      <strong>rows → columns → fields</strong> (text, checkbox, dropdown, and
+      optionally date/signature). Export walks rows top-down, computing Y from
+      row order and X/width from column count — manual X/Y coordinates go away
+      entirely. Options differ only in how you edit that structure:
+      <strong>1</strong> is the simplest to implement, <strong>3</strong> gives
+      the truest preview, <strong>5</strong> scales best for long forms.
     </p>
-  </div>
-  <div class="frame">
-    <div class="frame-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Edit form — My Form</span></div>
-    <div class="o3-body">
-      <div class="o3-toolbar">
-        <span class="btn">+ Row</span>
-        <span class="btn">+ Column in row</span>
-        <span class="sep"></span>
-        <span class="btn">T Text</span>
-        <span class="btn">☑ Checkbox</span>
-        <span class="btn">▾ Dropdown</span>
-        <span class="sep"></span>
-        <span class="btn">Page 1 ▾</span>
-        <span style="flex:1"></span>
-        <span class="btn primary">Export PDF form</span>
-      </div>
-      <div class="o3-stage">
-        <div class="o3-page">
-          <h4>My Form</h4>
-          <div class="pg">Page 1</div>
-          <div class="o3-prow">
-            <div class="o3-pfield"><label>FIRST NAME</label><div class="box"></div></div>
-            <div class="o3-pfield selected">
-              <div class="o3-float"><span class="on">Text</span><span>☑</span><span>▾</span><span>✕</span></div>
-              <label>LAST NAME</label><div class="box"></div>
-            </div>
-          </div>
-          <div class="o3-prow">
-            <div class="o3-pfield"><label>ADDRESS</label><div class="box"></div></div>
-          </div>
-          <div class="o3-prow">
-            <div class="o3-pfield"><label>CITY</label><div class="box"></div></div>
-            <div class="o3-pfield"><label>STATE</label><div class="box"></div></div>
-            <div class="o3-pfield"><label>ZIP</label><div class="box"></div></div>
-          </div>
-          <div class="o3-prow">
-            <div class="o3-pfield"><span class="cbx"></span><span class="cbl">I certify the above information is true</span></div>
-          </div>
-          <div class="o3-addrow">+ Add row</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= OPTION 4 ================= -->
-<section class="option" id="option4">
-  <div class="option-header">
-    <div class="kicker">Option 4</div>
-    <h2>Grid / Spreadsheet Table</h2>
-    <p>
-      Rows and columns as a literal table: each table row = a PDF row, each cell = a field.
-      Toolbar buttons add rows or columns; empty cells show a dashed "+" placeholder.
-      Very dense and fast for keyboard-heavy editing of large forms — no dragging needed.
-    </p>
-  </div>
-  <div class="frame">
-    <div class="frame-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Edit form — My Form</span></div>
-    <div class="o4-body">
-      <div class="o4-toolbar">
-        <span class="btn">+ Row</span>
-        <span class="btn">+ Column</span>
-        <span class="btn">− Column</span>
-        <span style="flex:1"></span>
-        <span class="btn">Preview</span>
-        <span class="btn primary">Export PDF form</span>
-      </div>
-      <table class="o4-table">
-        <thead>
-          <tr><th style="width:70px;">Row</th><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="o4-rowlabel">Row 1 ⠿</td>
-            <td>
-              <div class="o4-cellcard"><span class="nm">First Name</span><span class="chip text">Text</span></div>
-            </td>
-            <td>
-              <div class="o4-cellcard"><span class="nm">Last Name</span><span class="chip text">Text</span></div>
-            </td>
-            <td><div class="o4-empty">+ field</div></td>
-          </tr>
-          <tr>
-            <td class="o4-rowlabel">Row 2 ⠿</td>
-            <td colspan="3">
-              <div class="o4-cellcard"><span class="nm">Mailing Address</span><span class="chip text">Text · spans all columns</span></div>
-            </td>
-          </tr>
-          <tr>
-            <td class="o4-rowlabel">Row 3 ⠿</td>
-            <td>
-              <div class="o4-cellcard"><span class="nm">City</span><span class="chip text">Text</span></div>
-            </td>
-            <td>
-              <div class="o4-cellcard"><span class="nm">State</span><span class="chip drop">Dropdown</span></div>
-            </td>
-            <td>
-              <div class="o4-cellcard"><span class="nm">ZIP</span><span class="chip text">Text</span></div>
-            </td>
-          </tr>
-          <tr>
-            <td class="o4-rowlabel">Row 4 ⠿</td>
-            <td colspan="3">
-              <div class="o4-cellcard"><span class="nm">I agree to the terms and conditions</span><span class="chip check">Checkbox</span></div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ================= OPTION 5 ================= -->
-<section class="option" id="option5">
-  <div class="option-header">
-    <div class="kicker">Option 5</div>
-    <h2>Compact Canvas + Right Inspector</h2>
-    <p>
-      Left: a compact structural view — numbered rows containing field pills; click "+" inside a row to add
-      a column, or "+ Add row" below. Right: an inspector panel that edits whatever is selected
-      (label, type, options, height, column span). Keeps the field list uncluttered because all
-      settings live in the inspector.
-    </p>
-  </div>
-  <div class="frame">
-    <div class="frame-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>Edit form — My Form</span></div>
-    <div class="o5-body">
-      <div class="o5-main">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <span style="font-size:13px; font-weight:700;">Structure — Page 1</span>
-          <span class="btn primary">Export PDF form</span>
-        </div>
-        <div class="rows">
-          <div class="o5-row">
-            <div class="o5-rownum">1</div>
-            <div class="o5-field"><span class="chip text">T</span> First Name</div>
-            <div class="o5-field selected"><span class="chip text">T</span> Last Name</div>
-            <span class="btn subtle">+</span>
-          </div>
-          <div class="o5-row">
-            <div class="o5-rownum">2</div>
-            <div class="o5-field"><span class="chip text">T</span> Mailing Address</div>
-            <span class="btn subtle">+</span>
-          </div>
-          <div class="o5-row">
-            <div class="o5-rownum">3</div>
-            <div class="o5-field"><span class="chip text">T</span> City</div>
-            <div class="o5-field"><span class="chip drop">▾</span> State</div>
-            <div class="o5-field"><span class="chip text">T</span> ZIP</div>
-            <span class="btn subtle">+</span>
-          </div>
-          <div class="o5-row">
-            <div class="o5-rownum">4</div>
-            <div class="o5-field"><span class="chip check">☑</span> I agree to the terms</div>
-            <span class="btn subtle">+</span>
-          </div>
-          <span class="btn" style="align-self:flex-start;">+ Add row</span>
-        </div>
-      </div>
-      <div class="o5-inspector">
-        <h3>Field — Last Name</h3>
-        <div class="o5-group">
-          <span class="mock-label">Label</span>
-          <div class="mock-input" style="width:100%; color:var(--text);">Last Name</div>
-        </div>
-        <div class="o5-group">
-          <span class="mock-label">Type</span>
-          <div class="o5-seg"><span class="on">Text</span><span>Check</span><span>Drop</span></div>
-        </div>
-        <div class="o5-group o5-two">
-          <div><span class="mock-label">Row</span><div class="mock-input">1</div></div>
-          <div><span class="mock-label">Column</span><div class="mock-input">2 of 2</div></div>
-        </div>
-        <div class="o5-group o5-two">
-          <div><span class="mock-label">Height</span><div class="mock-input">24</div></div>
-          <div><span class="mock-label">Span</span><div class="mock-input">1 column</div></div>
-        </div>
-        <div class="o5-group">
-          <span class="mock-label">Page</span>
-          <div class="mock-input">Page 1</div>
-        </div>
-        <span class="btn danger" style="width:100%; justify-content:center;">Delete field</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<p class="footnote">
-  All five options share the same underlying model: the form is <strong>rows → columns → fields</strong>
-  (text, checkbox, dropdown, and optionally date/signature). Export walks rows top-down, computing Y from
-  row order and X/width from column count — manual X/Y coordinates go away entirely.
-  Options differ only in how you edit that structure: <strong>1</strong> is the simplest to implement,
-  <strong>3</strong> gives the truest preview, <strong>5</strong> scales best for long forms.
-</p>
-
-</body>
+  </body>
 </html>

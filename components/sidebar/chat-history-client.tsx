@@ -50,6 +50,7 @@ export function ChatHistoryClient() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchInitialChats()
   }, [fetchInitialChats])
 

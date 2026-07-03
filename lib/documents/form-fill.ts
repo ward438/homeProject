@@ -1,4 +1,10 @@
-import { PDFCheckBox, PDFDocument, PDFDropdown, PDFRadioGroup, PDFTextField } from 'pdf-lib'
+import {
+  PDFCheckBox,
+  PDFDocument,
+  PDFDropdown,
+  PDFRadioGroup,
+  PDFTextField
+} from 'pdf-lib'
 
 export type PdfFillValues = Record<string, string | boolean>
 

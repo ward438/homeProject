@@ -54,9 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     const mimeType =
-      file.type ||
-      getMimeFromFilename(file.name) ||
-      'application/octet-stream'
+      file.type || getMimeFromFilename(file.name) || 'application/octet-stream'
 
     if (!ALLOWED_MIMES.includes(mimeType as (typeof ALLOWED_MIMES)[number])) {
       return NextResponse.json(
@@ -125,9 +123,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ document })
   } catch (error) {
     console.error('[documents upload]', error)
-    return NextResponse.json(
-      { error: 'Upload failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }

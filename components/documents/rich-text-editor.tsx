@@ -1,12 +1,5 @@
 'use client'
 
-import { Color } from '@tiptap/extension-color'
-import { Extension } from '@tiptap/core'
-import TextAlign from '@tiptap/extension-text-align'
-import { TextStyle } from '@tiptap/extension-text-style'
-import Underline from '@tiptap/extension-underline'
-import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { useEffect } from 'react'
 
 import Box from '@mui/material/Box'
@@ -14,6 +7,14 @@ import ButtonBase from '@mui/material/ButtonBase'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import type { ChainedCommands } from '@tiptap/core'
+import { Extension } from '@tiptap/core'
+import { Color } from '@tiptap/extension-color'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import Underline from '@tiptap/extension-underline'
+import { EditorContent, useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 
 // ---- Custom font-size extension (no external package needed) ------------------
 declare module '@tiptap/core' {
@@ -28,31 +29,52 @@ declare module '@tiptap/core' {
 const FontSize = Extension.create({
   name: 'fontSize',
   addGlobalAttributes() {
-    return [{
-      types: ['textStyle'],
-      attributes: {
-        fontSize: {
-          default: null,
-          parseHTML: (el: HTMLElement) => el.style.fontSize || null,
-          renderHTML: (attrs: Record<string, string | null>) => {
-            if (!attrs.fontSize) return {}
-            return { style: `font-size: ${attrs.fontSize}` }
+    return [
+      {
+        types: ['textStyle'],
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (el: HTMLElement) => el.style.fontSize || null,
+            renderHTML: (attrs: Record<string, string | null>) => {
+              if (!attrs.fontSize) return {}
+              return { style: `font-size: ${attrs.fontSize}` }
+            }
           }
         }
       }
-    }]
+    ]
   },
   addCommands() {
     return {
-      setFontSize: (size: string) => ({ chain }: { chain: () => ReturnType }) =>
-        (chain() as ReturnType).setMark('textStyle', { fontSize: size }).run(),
-      unsetFontSize: () => ({ chain }: { chain: () => ReturnType }) =>
-        (chain() as ReturnType).setMark('textStyle', { fontSize: null }).run()
+      setFontSize:
+        (size: string) =>
+        ({ chain }: { chain: () => ChainedCommands }) =>
+          chain().setMark('textStyle', { fontSize: size }).run(),
+      unsetFontSize:
+        () =>
+        ({ chain }: { chain: () => ChainedCommands }) =>
+          chain().setMark('textStyle', { fontSize: null }).run()
     } as unknown as Record<string, unknown>
   }
 })
 
-const FONT_SIZES = ['8', '9', '10', '11', '12', '14', '16', '18', '20', '24', '28', '32', '36', '48']
+const FONT_SIZES = [
+  '8',
+  '9',
+  '10',
+  '11',
+  '12',
+  '14',
+  '16',
+  '18',
+  '20',
+  '24',
+  '28',
+  '32',
+  '36',
+  '48'
+]
 
 // ---- design tokens matching the form builder dark theme
 const C = {
@@ -158,18 +180,26 @@ export function RichTextEditor({
   useEffect(() => {
     if (!editor) return
     if (editor.getHTML() !== html) {
-      editor.commands.setContent(html || '', false)
+      editor.commands.setContent(html || '', { emitUpdate: false })
     }
   }, [html, editor])
 
   if (!editor) return null
 
-  const currentColor = editor.getAttributes('textStyle').color as string | undefined
-  const currentFontSize = (editor.getAttributes('textStyle').fontSize as string | undefined)?.replace('px', '') ?? ''
+  const currentColor = editor.getAttributes('textStyle').color as
+    | string
+    | undefined
+  const currentFontSize =
+    (editor.getAttributes('textStyle').fontSize as string | undefined)?.replace(
+      'px',
+      ''
+    ) ?? ''
 
   return (
     <Box>
-      <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>{label}</Typography>
+      <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>
+        {label}
+      </Typography>
       <Box
         sx={{
           border: `1px solid ${C.border}`,
@@ -244,7 +274,9 @@ export function RichTextEditor({
             >
               <option value="">—</option>
               {FONT_SIZES.map(s => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </Box>
           </Tooltip>
@@ -281,7 +313,15 @@ export function RichTextEditor({
           <Tooltip title="Text color" placement="top">
             <Box
               component="label"
-              sx={{ position: 'relative', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              sx={{
+                position: 'relative',
+                width: 26,
+                height: 26,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
               <Box
                 sx={{

@@ -4,7 +4,7 @@ export type TitleStyle = {
   fontSize: number
   fontWeight: 'bold' | 'normal'
   color: string
-  spacingBelow: number  // extra pts between title and first content row
+  spacingBelow: number // extra pts between title and first content row
 }
 
 export const DEFAULT_TITLE_STYLE: TitleStyle = {
@@ -18,6 +18,7 @@ export type FormFieldType =
   | 'text'
   | 'checkbox'
   | 'dropdown'
+  | 'radio'
   | 'static-text'
   | 'image'
   | 'divider'
@@ -58,7 +59,14 @@ export type TableConfig = {
   borderColor?: string
   cellPadding?: number
   rowHeight?: number
-  allowUserInput?: boolean   // when true, all data cells become fillable PDF fields
+  allowUserInput?: boolean // when true, all data cells become fillable PDF fields
+}
+
+export type DropdownOptionStyle = {
+  fontSize?: number
+  fontWeight?: 'normal' | 'bold'
+  fontStyle?: 'normal' | 'italic'
+  textColor?: string
 }
 
 export type FormField = {
@@ -71,6 +79,8 @@ export type FormField = {
   width: number
   height: number
   options?: string[]
+  optionStyles?: DropdownOptionStyle[]
+  dropdownPlaceholder?: string
   /** 1-based row index; when set, y is auto-computed at export */
   row?: number
   /** 1-based column index; when set, x/width are auto-computed at export */
@@ -122,6 +132,9 @@ export type FormField = {
   imageObjectFit?: 'contain' | 'fill'
   freePosition?: boolean
 
+  // Radio group layout
+  radioColumns?: number
+
   // Table block
   tableConfig?: TableConfig
   /** Where to render the table's label: 'above' = title bar above header, 'none' = hidden */
@@ -162,6 +175,7 @@ export type FormTemplateRecord = {
 export type FormExportRequest = {
   name: string
   fields: FormField[]
+  titleStyle?: TitleStyle
   sourceDocumentId?: string
 }
 
