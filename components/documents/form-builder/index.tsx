@@ -61,6 +61,8 @@ import {
   COMPACT_COLUMN_GAP,
   CONTENT_TOP,
   DEFAULT_HEIGHTS,
+  DEFAULT_IMAGE_HEIGHT,
+  defaultTableConfig,
   DRAG_FIELD_MIME,
   DRAG_MIME,
   FILLABLE_TYPES,
@@ -79,8 +81,7 @@ import {
   rebalanceOverflow,
   ROW_GAP,
   ROW_GAP_COMPACT,
-  SCALE
-} from './field-factory'
+  SCALE} from './field-factory'
 import { TableEditor } from './table-editor'
 import {
   C,
