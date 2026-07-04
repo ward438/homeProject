@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   Fragment,
@@ -33,29 +33,6 @@ import {
   Typography
 } from '@mui/material'
 
-import {
-  CHECKBOX_LABEL_GAP,
-  checkboxNaturalWidth,
-  COLUMN_GUTTER,
-  COMPACT_COLUMN_GAP,
-  CONTENT_TOP,
-  DEFAULT_CELL_PADDING,
-  DEFAULT_IMAGE_HEIGHT,
-  DEFAULT_STATIC_TEXT_HEIGHT,
-  DEFAULT_TABLE_HEADER_HEIGHT,
-  DEFAULT_TABLE_ROW_HEIGHT,
-  fieldLayoutHeight,
-  isCompactRow,
-  LABEL_SPACE,
-  needsAboveLabel,
-  PAGE_HEIGHT,
-  PAGE_MARGIN,
-  PAGE_WIDTH,
-  ROW_GAP,
-  ROW_GAP_COMPACT,
-  TABLE_TITLE_HEIGHT,
-  tableBlockHeight
-} from '@/lib/documents/form-layout'
 import type {
   FormField,
   FormFieldType,
@@ -64,6 +41,10 @@ import type {
   TitleStyle
 } from '@/lib/documents/types'
 import { DEFAULT_TITLE_STYLE } from '@/lib/documents/types'
+import type {
+  FormBuilderProps,
+  FormTemplateApiResponse
+} from '@/lib/types/form-builder'
 
 import { ColorPicker } from '@/components/documents/color-picker'
 import {
@@ -71,930 +52,47 @@ import {
   RichTextEditor
 } from '@/components/documents/rich-text-editor'
 
-// ---- mockup design tokens --------------------------------------------------
+import { FieldCanvas, PaletteItem } from './canvas'
+import {
+  approxStaticTextHeight,
+  CANVAS_WIDTH,
+  checkboxNaturalWidth,
+  COLUMN_GUTTER,
+  COMPACT_COLUMN_GAP,
+  CONTENT_TOP,
+  DEFAULT_HEIGHTS,
+  DEFAULT_IMAGE_HEIGHT,
+  defaultTableConfig,
+  DRAG_FIELD_MIME,
+  DRAG_MIME,
+  FILLABLE_TYPES,
+  isBuilderDrag,
+  isCompactRow,
+  LABEL_SPACE,
+  makeField,
+  migrateToRows,
+  needsAboveLabel,
+  normalize,
+  PAGE_HEIGHT,
+  PAGE_MARGIN,
+  PAGE_WIDTH,
+  PALETTE,
+  px,
+  rebalanceOverflow,
+  ROW_GAP,
+  ROW_GAP_COMPACT,
+  SCALE
+} from './field-factory'
+import { TableEditor } from './table-editor'
+import {
+  C,
+  darkInputSx,
+  MockButton,
+  PanelHeading,
+  SectionDivider
+} from './theme'
 
-const C = {
-  bg: '#0f1115',
-  panel: '#171a21',
-  panel2: '#1e2230',
-  stage: '#0a0c10',
-  border: '#2c3140',
-  input: '#10131a',
-  text: '#e8eaf0',
-  muted: '#9aa1b2',
-  accent: '#6c9eff',
-  accentText: '#0b1020',
-  green: '#4cc38a',
-  amber: '#e0a83a',
-  red: '#e5534b',
-  teal: '#2ec4b6',
-  purple: '#c084fc'
-}
-
-const darkInputSx = {
-  '& .MuiOutlinedInput-root': {
-    bgcolor: C.input,
-    color: C.text,
-    fontSize: 13,
-    '& fieldset': { borderColor: C.border },
-    '&:hover fieldset': { borderColor: C.muted },
-    '&.Mui-focused fieldset': { borderColor: C.accent }
-  },
-  '& .MuiInputLabel-root': { color: C.muted, fontSize: 13 },
-  '& .MuiInputLabel-root.Mui-focused': { color: C.accent }
-} as const
-
-function PanelHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <Typography
-      sx={{
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: '1.5px',
-        color: C.muted,
-        fontWeight: 700,
-        mb: 1
-      }}
-    >
-      {children}
-    </Typography>
-  )
-}
-
-function SectionDivider() {
-  return <Box sx={{ height: '1px', bgcolor: C.border, my: 1 }} />
-}
-
-function MockButton({
-  children,
-  primary,
-  danger,
-  dashed,
-  disabled,
-  onClick,
-  sx
-}: {
-  children: React.ReactNode
-  primary?: boolean
-  danger?: boolean
-  dashed?: boolean
-  disabled?: boolean
-  onClick?: () => void
-  sx?: object
-}) {
-  return (
-    <ButtonBase
-      disabled={disabled}
-      onClick={onClick}
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.75,
-        fontSize: 12.5,
-        fontWeight: 600,
-        px: 1.75,
-        py: 0.9,
-        borderRadius: '6px',
-        border: '1px solid',
-        borderStyle: dashed ? 'dashed' : 'solid',
-        borderColor: primary
-          ? C.accent
-          : danger
-            ? 'rgba(229,83,75,0.4)'
-            : C.border,
-        bgcolor: primary ? C.accent : 'transparent',
-        color: primary ? C.accentText : danger ? C.red : C.text,
-        opacity: disabled ? 0.45 : 1,
-        '&:hover': {
-          borderColor: primary ? C.accent : danger ? C.red : C.muted
-        },
-        ...sx
-      }}
-    >
-      {children}
-    </ButtonBase>
-  )
-}
-
-// ---- canvas geometry ---------------------------------------------------------
-
-const CANVAS_WIDTH = 500
-const SCALE = CANVAS_WIDTH / PAGE_WIDTH
-const px = (points: number) => points * SCALE
-
-const DRAG_MIME = 'application/x-payme-field-type'
-const DRAG_FIELD_MIME = 'application/x-payme-field-id'
-
-const isBuilderDrag = (e: React.DragEvent) =>
-  e.dataTransfer.types.includes(DRAG_MIME) ||
-  e.dataTransfer.types.includes(DRAG_FIELD_MIME)
-
-const DEFAULT_HEIGHTS: Record<FormFieldType, number> = {
-  text: 24,
-  checkbox: 16,
-  dropdown: 24,
-  radio: 60,
-  'static-text': DEFAULT_STATIC_TEXT_HEIGHT,
-  image: DEFAULT_IMAGE_HEIGHT,
-  divider: 2,
-  table: DEFAULT_TABLE_HEADER_HEIGHT + 2 * DEFAULT_TABLE_ROW_HEIGHT
-}
-
-const FILLABLE_TYPES: FormFieldType[] = [
-  'text',
-  'checkbox',
-  'dropdown',
-  'radio'
-]
-
-const PALETTE: {
-  type: FormFieldType
-  label: string
-  glyph: string
-  color: string
-  tile: string
-  dragToken?: string // custom token sent via DRAG_MIME (overrides type)
-  initPatch?: Partial<FormField> // extra props applied when field is created
-}[] = [
-  {
-    type: 'text',
-    label: 'Text input',
-    glyph: 'T',
-    color: C.accent,
-    tile: 'rgba(108,158,255,0.15)'
-  },
-  {
-    type: 'checkbox',
-    label: 'Checkbox',
-    glyph: '☑',
-    color: C.green,
-    tile: 'rgba(76,195,138,0.15)'
-  },
-  {
-    type: 'dropdown',
-    label: 'Dropdown',
-    glyph: '▾',
-    color: C.amber,
-    tile: 'rgba(224,168,58,0.15)'
-  },
-  {
-    type: 'radio',
-    label: 'Radio Group',
-    glyph: '◉',
-    color: '#a78bfa',
-    tile: 'rgba(167,139,250,0.15)'
-  },
-  {
-    type: 'radio',
-    label: 'Single Radio',
-    glyph: '○',
-    color: '#a78bfa',
-    tile: 'rgba(167,139,250,0.10)',
-    dragToken: 'radio-single',
-    initPatch: { options: [''], optionStyles: [{}], height: 20 }
-  },
-  {
-    type: 'static-text',
-    label: 'Static Text',
-    glyph: 'Aa',
-    color: C.muted,
-    tile: 'rgba(154,161,178,0.12)'
-  },
-  {
-    type: 'image',
-    label: 'Image',
-    glyph: '🖼',
-    color: C.teal,
-    tile: 'rgba(46,196,182,0.12)'
-  },
-  {
-    type: 'divider',
-    label: 'Divider',
-    glyph: '—',
-    color: C.muted,
-    tile: 'rgba(154,161,178,0.08)'
-  },
-  {
-    type: 'table',
-    label: 'Table',
-    glyph: '⊞',
-    color: C.amber,
-    tile: 'rgba(224,168,58,0.12)'
-  }
-]
-
-// ---- data helpers ------------------------------------------------------------
-
-type FormTemplateResponse = {
-  template: {
-    id: string
-    name: string
-    fields: FormField[]
-    exportedDocumentId?: string | null
-  } | null
-}
-
-type FormBuilderProps = {
-  sourceDocumentId: string | null
-  onExported: (documentId?: string) => void
-}
-
-function defaultTableConfig(): TableConfig {
-  return {
-    columns: [
-      { key: 'col1', label: 'Column 1', widthWeight: 1 },
-      { key: 'col2', label: 'Column 2', widthWeight: 1 }
-    ],
-    rows: [
-      { id: 'r1', cells: { col1: { value: '' }, col2: { value: '' } } },
-      { id: 'r2', cells: { col1: { value: '' }, col2: { value: '' } } }
-    ],
-    headerBg: '#3b4a6b',
-    headerTextColor: '#ffffff',
-    titleBg: '#2c3a57',
-    titleTextColor: '#ffffff',
-    titleFontSize: 11,
-    rowBg: '#ffffff',
-    altRowBg: '#f5f6f8',
-    borderColor: '#d0d4dc',
-    cellPadding: 4,
-    rowHeight: 20
-  }
-}
-
-function makeField(
-  type: FormFieldType,
-  page: number,
-  row: number,
-  column: number
-): FormField {
-  let label =
-    type === 'text'
-      ? 'Text field'
-      : type === 'checkbox'
-        ? 'Checkbox'
-        : type === 'dropdown'
-          ? 'Dropdown'
-          : type === 'radio'
-            ? 'Radio'
-            : type === 'static-text'
-              ? 'Section heading'
-              : type === 'image'
-                ? 'Image'
-                : type === 'divider'
-                  ? ''
-                  : 'Table'
-  return {
-    id: crypto.randomUUID(),
-    type,
-    label,
-    page,
-    row,
-    column,
-    span: 1,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: DEFAULT_HEIGHTS[type],
-    options:
-      type === 'dropdown' || type === 'radio'
-        ? ['Option 1', 'Option 2']
-        : undefined,
-    content: type === 'static-text' ? 'Text here' : undefined,
-    tableConfig: type === 'table' ? defaultTableConfig() : undefined,
-    fontSize: type === 'static-text' ? 12 : undefined
-  }
-}
-
-/** Renumber rows 1..n per page (by row order) and columns 1..k per row. */
-function normalize(fields: FormField[]): FormField[] {
-  const result = [...fields]
-  const pages = new Set(result.map(f => f.page || 1))
-
-  for (const page of pages) {
-    const rowNumbers = [
-      ...new Set(
-        result.filter(f => (f.page || 1) === page && f.row).map(f => f.row!)
-      )
-    ].sort((a, b) => a - b)
-
-    rowNumbers.forEach((oldRow, rowIdx) => {
-      const inRow = result
-        .filter(f => (f.page || 1) === page && f.row === oldRow)
-        .sort((a, b) => (a.column ?? 0) - (b.column ?? 0))
-      inRow.forEach((field, colIdx) => {
-        const i = result.findIndex(f => f.id === field.id)
-        result[i] = { ...result[i], row: rowIdx + 1, column: colIdx + 1 }
-      })
-    })
-  }
-
-  return result
-}
-
-/**
- * Rough static-text height estimate using Helvetica proportional metrics
- * (~0.578 × fontSize per character). Matches the export's pre-sizing closely
- * enough to keep the builder's rebalance in sync without needing pdf-lib fonts.
- */
-function approxStaticTextHeight(field: FormField): number {
-  const size = field.fontSize ?? 12
-  const lineH = size * 1.4
-  const padT = field.paddingTop ?? 4
-  const padB = field.paddingBottom ?? 4
-  // Use stored width if known, otherwise assume full content width minus margins
-  const fw =
-    (field.width && field.width > 0
-      ? field.width
-      : PAGE_WIDTH - 2 * PAGE_MARGIN) - 8
-  // Strip HTML tags for a plain-text char count
-  const text = (
-    field.contentHtml ||
-    field.content ||
-    field.label ||
-    ''
-  ).replace(/<[^>]+>/g, ' ')
-  const words = text.split(/\s+/).filter(Boolean)
-  let lines = 1
-  let lineW = 0
-  for (const word of words) {
-    const ww = (word.length + 1) * size * 0.578
-    if (lineW + ww > fw && lineW > 0) {
-      lines++
-      lineW = 0
-    }
-    lineW += ww
-  }
-  return padT + padB + lines * lineH
-}
-
-/**
- * Detects rows whose computed Y position would fall below the bottom margin and
- * auto-advances them to the next page. Runs sequentially so cascading overflow
- * (many rows pushed from page 1 → 2 → 3…) is handled in a single pass.
- */
-function rebalanceOverflow(fields: FormField[]): {
-  changed: boolean
-  fields: FormField[]
-  maxPage: number
-} {
-  const result = fields.map(f => ({ ...f }))
-
-  // Collect all rows sorted by (origPage, rowNumber)
-  const seen = new Set<string>()
-  const allRows: { origPage: number; rowNum: number }[] = []
-  for (const f of result) {
-    if (!f.row) continue
-    const key = `${f.page || 1}-${f.row}`
-    if (!seen.has(key)) {
-      seen.add(key)
-      allRows.push({ origPage: f.page || 1, rowNum: f.row })
-    }
-  }
-  allRows.sort((a, b) =>
-    a.origPage !== b.origPage ? a.origPage - b.origPage : a.rowNum - b.rowNum
-  )
-
-  let effectivePage = 1
-  let cursorY = CONTENT_TOP
-  let changed = false
-
-  for (const { origPage, rowNum } of allRows) {
-    if (origPage > effectivePage) {
-      effectivePage = origPage
-      cursorY = CONTENT_TOP
-    }
-
-    const rowFields = result.filter(
-      f => (f.page || 1) === origPage && f.row === rowNum
-    )
-    const spacingBefore = rowFields[0]?.spacingBefore ?? 0
-    cursorY -= spacingBefore
-
-    const labelSpace = rowFields.some(f => needsAboveLabel(f)) ? LABEL_SPACE : 0
-    const rowH = Math.max(
-      ...rowFields.map(f =>
-        f.type === 'static-text'
-          ? Math.max(fieldLayoutHeight(f), approxStaticTextHeight(f))
-          : fieldLayoutHeight(f)
-      )
-    )
-    let fieldY = cursorY - labelSpace - rowH
-
-    if (fieldY < PAGE_MARGIN) {
-      effectivePage++
-      cursorY = CONTENT_TOP
-      fieldY = cursorY - labelSpace - rowH
-    }
-
-    if (effectivePage !== origPage) {
-      for (const f of result) {
-        if ((f.page || 1) === origPage && f.row === rowNum) {
-          f.page = effectivePage
-          changed = true
-        }
-      }
-    }
-
-    const spacingAfter = rowFields[0]?.spacingAfter ?? 0
-    cursorY =
-      fieldY -
-      (isCompactRow(rowFields) ? ROW_GAP_COMPACT : ROW_GAP) -
-      spacingAfter
-  }
-
-  const maxPage = Math.max(1, ...result.map(f => f.page || 1))
-  return { changed, fields: changed ? normalize(result) : fields, maxPage }
-}
-
-/** Legacy templates have manual x/y and no row — give each field its own row. */
-function migrateToRows(fields: FormField[]): FormField[] {
-  if (fields.every(f => f.row)) return normalize(fields)
-
-  const migrated = [...fields]
-    .sort((a, b) => (a.page || 1) - (b.page || 1) || b.y - a.y)
-    .map((f, i) => ({ ...f, row: f.row ?? i + 1, column: f.column ?? 1 }))
-  return normalize(migrated)
-}
-
-// ---- table canvas preview ---------------------------------------------------
-
-function TablePreview({ field }: { field: FormField }) {
-  const cfg = field.tableConfig
-  if (!cfg) return null
-  const totalWeight = cfg.columns.reduce(
-    (sum, col) => sum + (col.widthWeight ?? 1),
-    0
-  )
-  const headerH = px(DEFAULT_TABLE_HEADER_HEIGHT)
-  const rowH = px(cfg.rowHeight ?? DEFAULT_TABLE_ROW_HEIGHT)
-  const cellPad = px(cfg.cellPadding ?? DEFAULT_CELL_PADDING)
-  const borderColor = cfg.borderColor ?? '#cccccc'
-
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        overflow: 'hidden',
-        border: `0.75px solid ${borderColor}`,
-        boxSizing: 'border-box'
-      }}
-    >
-      {/* Optional title bar above the column headers */}
-      {field.tableLabelPosition === 'above' && field.label && (
-        <Box
-          sx={{
-            width: '100%',
-            height: px(TABLE_TITLE_HEIGHT),
-            display: 'flex',
-            alignItems: 'center',
-            px: `${px(4)}px`,
-            bgcolor: cfg.titleBg ?? cfg.headerBg ?? '#2c3a57',
-            color: cfg.titleTextColor ?? cfg.headerTextColor ?? '#fff',
-            fontSize: px(cfg.titleFontSize ?? 11),
-            fontWeight: 700,
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}
-          dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
-        />
-      )}
-      <table
-        style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontSize: px(8),
-          tableLayout: 'fixed'
-        }}
-      >
-        <thead>
-          <tr>
-            {cfg.columns.map(col => (
-              <th
-                key={col.key}
-                style={{
-                  width: `${((col.widthWeight ?? 1) / totalWeight) * 100}%`,
-                  background: col.bgColor ?? cfg.headerBg ?? '#444444',
-                  color: col.textColor ?? cfg.headerTextColor ?? '#ffffff',
-                  padding: 0,
-                  paddingLeft: cellPad,
-                  height: headerH,
-                  textAlign: col.align ?? 'left',
-                  fontWeight: 700,
-                  border: 'none',
-                  borderBottom: `0.75px solid ${borderColor}`,
-                  boxSizing: 'border-box',
-                  verticalAlign: 'middle',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {cfg.rows.map((row, rowIdx) => {
-            const isAlt = rowIdx % 2 === 1
-            const bg =
-              row.bgColor ??
-              (isAlt && cfg.altRowBg ? cfg.altRowBg : (cfg.rowBg ?? '#ffffff'))
-            const tc = row.textColor ?? '#1a1a1a'
-            const isLastRow = rowIdx === cfg.rows.length - 1
-            return (
-              <tr key={row.id}>
-                {cfg.columns.map(col => {
-                  const cell = row.cells[col.key]
-                  return (
-                    <td
-                      key={col.key}
-                      style={{
-                        background: bg,
-                        color: tc,
-                        padding: 0,
-                        paddingLeft: cellPad,
-                        height: rowH,
-                        textAlign: col.align ?? 'left',
-                        border: 'none',
-                        borderBottom: isLastRow
-                          ? 'none'
-                          : `0.3px solid ${borderColor}`,
-                        boxSizing: 'border-box',
-                        verticalAlign: 'middle',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {cell?.isField || cfg.allowUserInput ? (
-                        <Box
-                          sx={{
-                            height: px(14),
-                            bgcolor: '#ffffff',
-                            borderRadius: '1px',
-                            mx: `${px(2)}px`
-                          }}
-                        />
-                      ) : (
-                        cell?.value || ''
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </Box>
-  )
-}
-
-// ---- table editor sub-panel -------------------------------------------------
-
-function TableEditor({
-  field,
-  updateField
-}: {
-  field: FormField
-  updateField: (id: string, patch: Partial<FormField>) => void
-}) {
-  const cfg = field.tableConfig ?? defaultTableConfig()
-
-  const patchCfg = (patch: Partial<TableConfig>) => {
-    updateField(field.id, { tableConfig: { ...cfg, ...patch } })
-  }
-
-  const addColumn = () => {
-    const key = `col${Date.now()}`
-    const columns = [
-      ...cfg.columns,
-      { key, label: 'New Column', widthWeight: 1 }
-    ]
-    const rows = cfg.rows.map(row => ({
-      ...row,
-      cells: { ...row.cells, [key]: { value: '' } }
-    }))
-    patchCfg({ columns, rows })
-  }
-
-  const removeColumn = (key: string) => {
-    const columns = cfg.columns.filter(c => c.key !== key)
-    const rows = cfg.rows.map(row => {
-      const cells = { ...row.cells }
-      delete cells[key]
-      return { ...row, cells }
-    })
-    patchCfg({ columns, rows })
-  }
-
-  const updateColumn = (
-    key: string,
-    patch: Partial<TableConfig['columns'][0]>
-  ) => {
-    patchCfg({
-      columns: cfg.columns.map(c => (c.key === key ? { ...c, ...patch } : c))
-    })
-  }
-
-  const addRow = () => {
-    const newRow = {
-      id: crypto.randomUUID(),
-      cells: Object.fromEntries(cfg.columns.map(c => [c.key, { value: '' }]))
-    }
-    patchCfg({ rows: [...cfg.rows, newRow] })
-  }
-
-  const removeRow = (id: string) => {
-    patchCfg({ rows: cfg.rows.filter(r => r.id !== id) })
-  }
-
-  const updateCell = (
-    rowId: string,
-    colKey: string,
-    patch: Partial<{ value: string; isField: boolean }>
-  ) => {
-    patchCfg({
-      rows: cfg.rows.map(r =>
-        r.id === rowId
-          ? {
-              ...r,
-              cells: { ...r.cells, [colKey]: { ...r.cells[colKey], ...patch } }
-            }
-          : r
-      )
-    })
-  }
-
-  const updateRow = (rowId: string, patch: Partial<TableRow>) => {
-    patchCfg({
-      rows: cfg.rows.map(r => (r.id === rowId ? { ...r, ...patch } : r))
-    })
-  }
-
-  return (
-    <Stack sx={{ gap: 1.5 }}>
-      <PanelHeading>Table columns</PanelHeading>
-      {cfg.columns.map(col => (
-        <Box
-          key={col.key}
-          sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}
-        >
-          <Stack
-            direction="row"
-            sx={{ gap: 0.75, alignItems: 'center', mb: 0.75 }}
-          >
-            <Typography sx={{ fontSize: 11, color: C.muted, flex: 1 }}>
-              Width weight:
-            </Typography>
-            <TextField
-              size="small"
-              type="number"
-              value={col.widthWeight ?? 1}
-              onChange={e =>
-                updateColumn(col.key, {
-                  widthWeight: Number(e.target.value) || 1
-                })
-              }
-              sx={{ width: 52, ...darkInputSx }}
-              slotProps={{
-                htmlInput: {
-                  min: 0.1,
-                  step: 0.1,
-                  style: { textAlign: 'center' }
-                }
-              }}
-            />
-            <IconButton
-              size="small"
-              onClick={() => removeColumn(col.key)}
-              sx={{ color: C.red, flexShrink: 0 }}
-            >
-              <DeleteOutlinedIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Stack>
-          <RichTextEditor
-            label="Column header"
-            placeholder="Column label…"
-            html={
-              col.labelHtml ??
-              (col.label ? `<p><strong>${col.label}</strong></p>` : '')
-            }
-            onChange={(html, plain) =>
-              updateColumn(col.key, {
-                labelHtml: html,
-                label: plain || col.label
-              })
-            }
-          />
-          <Stack direction="row" sx={{ gap: 1, mt: 0.75 }}>
-            <Box sx={{ flex: 1 }}>
-              <ColorPicker
-                label="Col bg"
-                value={col.bgColor ?? cfg.headerBg ?? '#3b4a6b'}
-                onChange={v => updateColumn(col.key, { bgColor: v })}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <ColorPicker
-                label="Col text"
-                value={col.textColor ?? cfg.headerTextColor ?? '#ffffff'}
-                onChange={v => updateColumn(col.key, { textColor: v })}
-              />
-            </Box>
-          </Stack>
-        </Box>
-      ))}
-      <MockButton dashed onClick={addColumn} sx={{ fontSize: 12, py: 0.6 }}>
-        + Add column
-      </MockButton>
-
-      <SectionDivider />
-      <PanelHeading>Table rows</PanelHeading>
-      {cfg.rows.map((row, rowIdx) => (
-        <Box
-          key={row.id}
-          sx={{ border: `1px solid ${C.border}`, borderRadius: '6px', p: 1 }}
-        >
-          <Stack
-            direction="row"
-            sx={{
-              alignItems: 'center',
-              mb: 0.75,
-              justifyContent: 'space-between'
-            }}
-          >
-            <Typography sx={{ fontSize: 11, color: C.muted }}>
-              Row {rowIdx + 1}
-            </Typography>
-            <IconButton
-              size="small"
-              onClick={() => removeRow(row.id)}
-              sx={{ color: C.red }}
-            >
-              <DeleteOutlinedIcon sx={{ fontSize: 12 }} />
-            </IconButton>
-          </Stack>
-          {cfg.columns.map(col => {
-            const cell = row.cells[col.key] ?? { value: '' }
-            return (
-              <Stack
-                key={col.key}
-                direction="row"
-                sx={{ gap: 0.5, mb: 0.5, alignItems: 'center' }}
-              >
-                <Typography
-                  sx={{
-                    fontSize: 10,
-                    color: C.muted,
-                    width: 55,
-                    flexShrink: 0
-                  }}
-                  noWrap
-                >
-                  {col.label}
-                </Typography>
-                <TextField
-                  size="small"
-                  value={cell.value}
-                  onChange={e =>
-                    updateCell(row.id, col.key, { value: e.target.value })
-                  }
-                  sx={{ flex: 1, ...darkInputSx }}
-                  slotProps={{
-                    htmlInput: { style: { fontSize: 11, padding: '3px 6px' } }
-                  }}
-                />
-                <Tooltip
-                  title={
-                    cell.isField
-                      ? 'Fillable (click to toggle)'
-                      : 'Static (click to toggle)'
-                  }
-                >
-                  <ButtonBase
-                    onClick={() =>
-                      updateCell(row.id, col.key, { isField: !cell.isField })
-                    }
-                    sx={{
-                      fontSize: 10,
-                      px: 0.75,
-                      py: 0.4,
-                      borderRadius: '4px',
-                      border: `1px solid ${C.border}`,
-                      bgcolor: cell.isField
-                        ? 'rgba(108,158,255,0.2)'
-                        : 'transparent',
-                      color: cell.isField ? C.accent : C.muted,
-                      flexShrink: 0
-                    }}
-                  >
-                    {cell.isField ? 'Field' : 'Text'}
-                  </ButtonBase>
-                </Tooltip>
-              </Stack>
-            )
-          })}
-          {/* Per-row styling */}
-          <Stack direction="row" sx={{ gap: 1, mt: 0.75 }}>
-            <Box sx={{ flex: 1 }}>
-              <ColorPicker
-                label="Row bg"
-                value={row.bgColor ?? '#ffffff'}
-                onChange={v => updateRow(row.id, { bgColor: v })}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <ColorPicker
-                label="Row text"
-                value={row.textColor ?? '#1a1a1a'}
-                onChange={v => updateRow(row.id, { textColor: v })}
-              />
-            </Box>
-          </Stack>
-        </Box>
-      ))}
-      <MockButton dashed onClick={addRow} sx={{ fontSize: 12, py: 0.6 }}>
-        + Add row
-      </MockButton>
-
-      <SectionDivider />
-      <PanelHeading>Table appearance</PanelHeading>
-
-      {/* Global row-input toggle */}
-      <Stack
-        direction="row"
-        sx={{ alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <Typography sx={{ fontSize: 12, color: C.text }}>
-          Allow row input
-        </Typography>
-        <Switch
-          size="small"
-          checked={cfg.allowUserInput ?? false}
-          onChange={e => patchCfg({ allowUserInput: e.target.checked })}
-          sx={{
-            '& .MuiSwitch-thumb': {
-              bgcolor: cfg.allowUserInput ? C.accent : C.muted
-            },
-            '& .MuiSwitch-track': {
-              bgcolor: cfg.allowUserInput ? `${C.accent}55` : `${C.border}`
-            }
-          }}
-        />
-      </Stack>
-      <Typography sx={{ fontSize: 10, color: C.muted, mt: -1 }}>
-        {cfg.allowUserInput
-          ? 'All data cells are fillable in the exported PDF.'
-          : 'Only cells individually marked as "Field" are fillable.'}
-      </Typography>
-      <ColorPicker
-        label="Header background"
-        value={cfg.headerBg}
-        onChange={v => patchCfg({ headerBg: v })}
-      />
-      <ColorPicker
-        label="Header text color"
-        value={cfg.headerTextColor}
-        onChange={v => patchCfg({ headerTextColor: v })}
-      />
-      <ColorPicker
-        label="Row background"
-        value={cfg.rowBg}
-        onChange={v => patchCfg({ rowBg: v })}
-      />
-      <ColorPicker
-        label="Alt row background"
-        value={cfg.altRowBg}
-        onChange={v => patchCfg({ altRowBg: v })}
-      />
-      <ColorPicker
-        label="Border color"
-        value={cfg.borderColor}
-        onChange={v => patchCfg({ borderColor: v })}
-      />
-      <Stack direction="row" sx={{ gap: 1 }}>
-        <TextField
-          label="Row height (pt)"
-          size="small"
-          type="number"
-          value={cfg.rowHeight ?? 20}
-          onChange={e => patchCfg({ rowHeight: Number(e.target.value) || 20 })}
-          sx={{ flex: 1, ...darkInputSx }}
-        />
-        <TextField
-          label="Cell padding"
-          size="small"
-          type="number"
-          value={cfg.cellPadding ?? 4}
-          onChange={e => patchCfg({ cellPadding: Number(e.target.value) || 4 })}
-          sx={{ flex: 1, ...darkInputSx }}
-        />
-      </Stack>
-    </Stack>
-  )
-}
-
+type FormTemplateResponse = FormTemplateApiResponse
 // ---- component ---------------------------------------------------------------
 
 export function FormBuilder({
@@ -1519,7 +617,7 @@ export function FormBuilder({
 
         <MockButton primary disabled={saving || loadingTemplate} onClick={save}>
           {saving
-            ? 'Saving…'
+            ? 'Savingâ€¦'
             : templateId
               ? 'Save & re-export'
               : 'Export PDF form'}
@@ -1629,7 +727,7 @@ export function FormBuilder({
               </Box>
             )}
 
-            {/* Page bottom boundary — dashed line at the printable bottom margin */}
+            {/* Page bottom boundary â€” dashed line at the printable bottom margin */}
             <Box
               sx={{
                 position: 'absolute',
@@ -1937,7 +1035,7 @@ export function FormBuilder({
             maxHeight: { md: `${px(PAGE_HEIGHT) + 100}px` }
           }}
         >
-          {/* Selected field type badge + label — always visible at top of inspector */}
+          {/* Selected field type badge + label â€” always visible at top of inspector */}
           {selected ? (
             (() => {
               const palItem = PALETTE.find(p => p.type === selected.type)
@@ -2051,18 +1149,18 @@ export function FormBuilder({
                 onClick={() => setShowTableEditor(false)}
                 sx={{ mb: 1.5, fontSize: 12, py: 0.6 }}
               >
-                ← Back to field
+                â† Back to field
               </MockButton>
               <TableEditor field={selected} updateField={updateField} />
             </>
           ) : (
             <Stack sx={{ gap: 1.75 }}>
-              {/* Label / Content — rich text for all field types */}
+              {/* Label / Content â€” rich text for all field types */}
               {selected.type === 'static-text' ? (
                 <RichTextEditor
                   label="Content"
                   multiline
-                  placeholder="Enter static text…"
+                  placeholder="Enter static textâ€¦"
                   html={
                     selected.contentHtml ??
                     (selected.content ? `<p>${selected.content}</p>` : '')
@@ -2077,7 +1175,7 @@ export function FormBuilder({
               ) : selected.type !== 'table' ? (
                 <RichTextEditor
                   label="Label"
-                  placeholder="Field label…"
+                  placeholder="Field labelâ€¦"
                   html={
                     selected.labelHtml ??
                     (selected.label
@@ -2094,7 +1192,7 @@ export function FormBuilder({
               ) : (
                 <RichTextEditor
                   label="Table title / label"
-                  placeholder="Table label…"
+                  placeholder="Table labelâ€¦"
                   html={
                     selected.labelHtml ??
                     (selected.label
@@ -2172,7 +1270,7 @@ export function FormBuilder({
                 </Box>
               )}
 
-              {/* Free-position toggle — all fillable fields */}
+              {/* Free-position toggle â€” all fillable fields */}
               {FILLABLE_TYPES.includes(selected.type) && (
                 <Box>
                   <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>
@@ -2317,7 +1415,7 @@ export function FormBuilder({
               {selected.type !== 'checkbox' && (
                 <Box>
                   <Typography sx={{ fontSize: 11, color: C.muted, mb: 0.5 }}>
-                    Width —{' '}
+                    Width â€”{' '}
                     {Math.round(
                       (((selected.span ?? 1) || 1) / selectedRowDivisor) * 100
                     )}
@@ -2336,11 +1434,11 @@ export function FormBuilder({
                     }
                     marks={[
                       { value: 0.1, label: '' },
-                      { value: 0.25, label: '¼×' },
-                      { value: 0.5, label: '½×' },
-                      { value: 1, label: '1×' },
-                      { value: 2, label: '2×' },
-                      { value: 3, label: '3×' }
+                      { value: 0.25, label: 'Â¼Ã—' },
+                      { value: 0.5, label: 'Â½Ã—' },
+                      { value: 1, label: '1Ã—' },
+                      { value: 2, label: '2Ã—' },
+                      { value: 3, label: '3Ã—' }
                     ]}
                     sx={{
                       color: C.accent,
@@ -2908,7 +2006,7 @@ export function FormBuilder({
                             key={mode}
                             onClick={() => {
                               if (mode === 'free') {
-                                // Remove from grid — use last known or default coordinates
+                                // Remove from grid â€” use last known or default coordinates
                                 setFields(current => {
                                   const updated = normalize(
                                     current.filter(f => f.id !== selected.id)
@@ -3095,7 +2193,7 @@ export function FormBuilder({
                       ))}
                     </Stack>
                   </Box>
-                  {/* Title bar styling — only when visible */}
+                  {/* Title bar styling â€” only when visible */}
                   {selected.tableLabelPosition === 'above' &&
                     (() => {
                       const cfg = selected.tableConfig ?? defaultTableConfig()
@@ -3208,7 +2306,7 @@ export function FormBuilder({
                 onChange={v => updateField(selected.id, { backgroundColor: v })}
               />
 
-              {/* Border controls — shown for fillable fields */}
+              {/* Border controls â€” shown for fillable fields */}
               {FILLABLE_TYPES.includes(selected.type) && (
                 <>
                   <SectionDivider />
@@ -3480,490 +2578,6 @@ export function FormBuilder({
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
-  )
-}
-
-// ---- palette item sub-component ---------------------------------------------
-
-function PaletteItem({
-  item,
-  onAdd
-}: {
-  item: (typeof PALETTE)[0]
-  onAdd: (type: FormFieldType, patch?: Partial<FormField>) => void
-}) {
-  return (
-    <Box
-      draggable
-      onDragStart={(e: React.DragEvent) => {
-        e.dataTransfer.setData(DRAG_MIME, item.dragToken ?? item.type)
-        e.dataTransfer.effectAllowed = 'copy'
-      }}
-      onClick={() => onAdd(item.type, item.initPatch)}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1.25,
-        border: `1px solid ${C.border}`,
-        borderRadius: '8px',
-        px: 1.5,
-        py: 1,
-        fontSize: 13,
-        bgcolor: C.panel,
-        cursor: 'grab',
-        userSelect: 'none',
-        '&:hover': { borderColor: C.accent }
-      }}
-    >
-      <Box
-        sx={{
-          width: 26,
-          height: 26,
-          borderRadius: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 12,
-          fontWeight: 700,
-          bgcolor: item.tile,
-          color: item.color,
-          flexShrink: 0
-        }}
-      >
-        {item.glyph}
-      </Box>
-      {item.label}
-    </Box>
-  )
-}
-
-// ---- field canvas renderer --------------------------------------------------
-
-function FieldCanvas({
-  field,
-  rowLabelSpace,
-  rowHeight
-}: {
-  field: FormField
-  rowLabelSpace: number
-  rowHeight: number
-}) {
-  if (field.type === 'static-text') {
-    const bw = field.borderWidth ?? 0
-    const bc = field.borderColor ?? '#cccccc'
-    const br = field.borderRadius ?? 0
-    const btw = field.borderTopWidth ?? bw
-    const brw = field.borderRightWidth ?? bw
-    const bbw = field.borderBottomWidth ?? bw
-    const blw = field.borderLeftWidth ?? bw
-    // Per-corner radius (CSS order: TL TR BR BL)
-    const rTL = field.borderTopLeftRadius ?? br
-    const rTR = field.borderTopRightRadius ?? br
-    const rBR = field.borderBottomRightRadius ?? br
-    const rBL = field.borderBottomLeftRadius ?? br
-    const radiusCss = `${px(rTL)}px ${px(rTR)}px ${px(rBR)}px ${px(rBL)}px`
-    const size = field.fontSize ?? 12
-    const lineH = size * 1.4
-    return (
-      <Box
-        sx={{
-          borderTop: btw > 0 ? `${btw}px solid ${bc}` : 'none',
-          borderRight: brw > 0 ? `${brw}px solid ${bc}` : 'none',
-          borderBottom: bbw > 0 ? `${bbw}px solid ${bc}` : 'none',
-          borderLeft: blw > 0 ? `${blw}px solid ${bc}` : 'none',
-          borderRadius: radiusCss,
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-          minHeight: px(field.height || DEFAULT_STATIC_TEXT_HEIGHT)
-        }}
-      >
-        <Box
-          sx={{
-            pt: `${px(field.paddingTop ?? 4)}px`,
-            pb: `${px(field.paddingBottom ?? 4)}px`,
-            px: `${px(4)}px`,
-            fontSize: px(size),
-            fontWeight: field.fontWeight === 'bold' ? 700 : 400,
-            fontStyle: field.fontStyle === 'italic' ? 'italic' : 'normal',
-            color: field.textColor ?? '#1a1a1a',
-            textAlign: field.textAlign ?? 'left',
-            lineHeight: 1.4,
-            wordBreak: 'break-word',
-            bgcolor: field.backgroundColor ?? 'transparent',
-            // Each <p> is a new paragraph line; add spacing between them matching PDF lineHeight
-            '& p': { margin: 0, minHeight: `${px(lineH)}px` },
-            '& p + p': { marginTop: 0 },
-            '& strong': { fontWeight: 700 },
-            '& em': { fontStyle: 'italic' },
-            '& u': { textDecoration: 'underline' }
-          }}
-          dangerouslySetInnerHTML={{
-            __html:
-              field.contentHtml ??
-              field.content ??
-              '<em style="color:#aaa">Static text</em>'
-          }}
-        />
-      </Box>
-    )
-  }
-
-  if (field.type === 'image') {
-    return (
-      <Box
-        sx={{
-          width: '100%',
-          height: px(field.height || DEFAULT_IMAGE_HEIGHT),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px dashed #ccc',
-          bgcolor: '#f9f9f9',
-          borderRadius: '2px',
-          overflow: 'hidden'
-        }}
-      >
-        {field.imageData ? (
-          <img
-            src={field.imageData}
-            alt=""
-            style={{
-              objectFit: field.imageObjectFit ?? 'contain',
-              width: '100%',
-              height: '100%'
-            }}
-          />
-        ) : (
-          <Typography sx={{ fontSize: px(9), color: '#aaa' }}>
-            🖼 No image
-          </Typography>
-        )}
-      </Box>
-    )
-  }
-
-  if (field.type === 'divider') {
-    return (
-      <Box
-        sx={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          height: '100%'
-        }}
-      >
-        <Box
-          sx={{
-            width: '100%',
-            height: Math.max(1, px(field.height || 1.5)),
-            bgcolor: field.borderColor ?? '#888888'
-          }}
-        />
-      </Box>
-    )
-  }
-
-  if (field.type === 'table') {
-    return <TablePreview field={field} />
-  }
-
-  // Fillable: checkbox, text, dropdown
-  if (field.type === 'checkbox' && field.labelPosition === 'above') {
-    return (
-      <Box>
-        <Typography
-          sx={{
-            fontSize: px(9.5),
-            fontWeight: 600,
-            color: field.textColor ?? '#444',
-            textTransform: 'uppercase',
-            letterSpacing: '0.4px',
-            whiteSpace: 'nowrap',
-            overflow: 'visible',
-            width: 'max-content',
-            height: px(rowLabelSpace),
-            display: 'flex',
-            alignItems: 'flex-end',
-            pb: `${px(3)}px`,
-            '& p': { margin: 0 },
-            '& strong': { fontWeight: 700 },
-            '& em': { fontStyle: 'italic' },
-            '& u': { textDecoration: 'underline' }
-          }}
-          dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
-        />
-        <Box
-          sx={{
-            width: px(field.height),
-            height: px(field.height),
-            border: '1px solid #999',
-            borderRadius: '2px',
-            bgcolor: '#fafafa'
-          }}
-        />
-      </Box>
-    )
-  }
-
-  // Single radio — renders inline like a checkbox (circle + label, no container)
-  if (field.type === 'radio' && (field.options ?? []).length <= 1) {
-    const opt = (field.options ?? [''])[0]
-    const s = (field.optionStyles ?? [])[0] ?? {}
-    return (
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: 'center',
-          gap: `${px(CHECKBOX_LABEL_GAP)}px`,
-          height: px(rowLabelSpace + rowHeight),
-          pt: `${px(rowLabelSpace)}px`
-        }}
-      >
-        <Box
-          sx={{
-            width: px(field.height),
-            height: px(field.height),
-            border: `1px solid ${field.borderColor ?? '#999'}`,
-            borderRadius: '50%',
-            bgcolor: '#fafafa',
-            flexShrink: 0
-          }}
-        />
-        <Typography
-          sx={{
-            fontSize: px(s.fontSize ?? 10),
-            fontWeight: s.fontWeight ?? 'normal',
-            fontStyle: s.fontStyle ?? 'normal',
-            color: s.textColor ?? '#333',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {opt || field.label}
-        </Typography>
-      </Stack>
-    )
-  }
-
-  if (field.type === 'checkbox') {
-    return (
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: 'center',
-          gap: `${px(CHECKBOX_LABEL_GAP)}px`,
-          height: px(rowLabelSpace + rowHeight),
-          pt: `${px(rowLabelSpace)}px`
-        }}
-      >
-        <Box
-          sx={{
-            width: px(field.height),
-            height: px(field.height),
-            border: `${field.borderWidth ?? 1}px solid ${field.borderColor ?? '#999'}`,
-            borderRadius: `${px(field.borderRadius ?? 2)}px`,
-            bgcolor: '#fafafa',
-            flexShrink: 0
-          }}
-        />
-        <Box
-          sx={{
-            fontSize: px(10),
-            color: field.textColor ?? '#333',
-            whiteSpace: 'nowrap',
-            overflow: 'visible',
-            width: 'max-content',
-            flexShrink: 0,
-            '& p': { margin: 0 },
-            '& strong': { fontWeight: 700 },
-            '& em': { fontStyle: 'italic' },
-            '& u': { textDecoration: 'underline' }
-          }}
-          dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
-        />
-      </Stack>
-    )
-  }
-
-  // text / dropdown
-  const bw = field.borderWidth ?? 1
-  const bc = field.borderColor ?? '#999999'
-  const br = field.borderRadius ?? 2
-  // Per-side widths fall back to the uniform borderWidth
-  const btw = field.borderTopWidth ?? bw
-  const brw = field.borderRightWidth ?? bw
-  const bbw = field.borderBottomWidth ?? bw
-  const blw = field.borderLeftWidth ?? bw
-  // Per-corner radius (CSS order: TL TR BR BL)
-  const rTL = field.borderTopLeftRadius ?? br
-  const rTR = field.borderTopRightRadius ?? br
-  const rBR = field.borderBottomRightRadius ?? br
-  const rBL = field.borderBottomLeftRadius ?? br
-  const radiusCss = `${px(rTL)}px ${px(rTR)}px ${px(rBR)}px ${px(rBL)}px`
-  // Divider between label strip and input uses the top+bottom sides
-  const midW = Math.max(btw, bbw, 0.5)
-  // Read alignment from labelHtml the same way the PDF export does
-  const align = (() => {
-    if (!field.labelHtml) return 'flex-start'
-    const m = field.labelHtml.match(
-      /<p[^>]*style="[^"]*text-align:\s*(left|center|right)/i
-    )
-    const a = m?.[1]?.toLowerCase()
-    return a === 'center' ? 'center' : a === 'right' ? 'flex-end' : 'flex-start'
-  })()
-  // Bold: default true when no labelHtml (new field); detect <strong> when HTML exists
-  const labelHasBold =
-    !field.labelHtml || /<strong|<b[ >]/i.test(field.labelHtml)
-  // Italic: detect <em> or <i> in HTML
-  const labelHasItalic = /<em|<i[ >]/i.test(field.labelHtml ?? '')
-  // Underline: detect <u> in HTML
-  const labelHasUnderline = /<u[ >]/i.test(field.labelHtml ?? '')
-  return (
-    <Box
-      sx={{
-        borderTop: `${btw}px solid ${bc}`,
-        borderRight: `${brw}px solid ${bc}`,
-        borderBottom: `${bbw}px solid ${bc}`,
-        borderLeft: `${blw}px solid ${bc}`,
-        borderRadius: radiusCss,
-        overflow: 'hidden',
-        height: px(LABEL_SPACE + field.height),
-        boxSizing: 'border-box'
-      }}
-    >
-      <Box
-        sx={{
-          fontWeight: labelHasBold ? 700 : 400,
-          fontStyle: labelHasItalic ? 'italic' : 'normal',
-          textDecoration: labelHasUnderline ? 'underline' : 'none',
-          color: field.textColor ?? '#444',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          height: px(LABEL_SPACE),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: align,
-          px: `${px(4)}px`,
-          bgcolor: field.backgroundColor ?? '#ffffff',
-          flexShrink: 0,
-          overflow: 'hidden',
-          '& p': { margin: 0, fontSize: 'inherit' },
-          '& strong': { fontWeight: 800 },
-          '& em': { fontStyle: 'italic' },
-          '& u': { textDecoration: 'underline' }
-        }}
-        dangerouslySetInnerHTML={{ __html: field.labelHtml ?? field.label }}
-      />
-      <Box
-        sx={{
-          height: px(field.height),
-          bgcolor: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: `${px(5)}px`,
-          borderTop: `${midW}px solid ${bc}`
-        }}
-      >
-        {field.type === 'dropdown' &&
-          (() => {
-            const hasPlaceholder = !!field.dropdownPlaceholder
-            const displayText =
-              field.dropdownPlaceholder || (field.options ?? [])[0] || 'Select…'
-            // Only apply option styling when actually showing that option (no placeholder)
-            const optStyle = hasPlaceholder
-              ? null
-              : (field.optionStyles?.[0] ?? null)
-            return (
-              <>
-                <Typography
-                  sx={{
-                    fontSize: px(optStyle?.fontSize ?? field.fontSize ?? 10),
-                    fontWeight: optStyle?.fontWeight ?? 'normal',
-                    fontStyle: optStyle?.fontStyle ?? 'normal',
-                    color: hasPlaceholder
-                      ? '#aaa'
-                      : (optStyle?.textColor ?? '#555'),
-                    flex: 1,
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  {displayText}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: px(9),
-                    color: '#777',
-                    ml: 0.5,
-                    flexShrink: 0
-                  }}
-                >
-                  ▾
-                </Typography>
-              </>
-            )
-          })()}
-        {field.type === 'radio' &&
-          (() => {
-            const opts = field.options ?? []
-            const cols = Math.max(1, field.radioColumns ?? 1)
-            const isSingle = opts.length <= 1
-            if (isSingle) {
-              // handled above as a special render path — won't reach here
-              return null
-            }
-            return (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                  width: '100%',
-                  gap: `${px(2)}px 0`
-                }}
-              >
-                {opts.map((opt, i) => {
-                  const s = (field.optionStyles ?? [])[i] ?? {}
-                  return (
-                    <Box
-                      key={i}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: `${px(3)}px`
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: px(7),
-                          height: px(7),
-                          borderRadius: '50%',
-                          border: `${px(1)}px solid #999`,
-                          bgcolor: '#fff',
-                          flexShrink: 0
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: px(s.fontSize ?? field.fontSize ?? 10),
-                          fontWeight: s.fontWeight ?? 'normal',
-                          fontStyle: s.fontStyle ?? 'normal',
-                          color: s.textColor ?? '#1a1a1a',
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          textOverflow: 'ellipsis'
-                        }}
-                      >
-                        {opt}
-                      </Typography>
-                    </Box>
-                  )
-                })}
-              </Box>
-            )
-          })()}
-      </Box>
     </Box>
   )
 }

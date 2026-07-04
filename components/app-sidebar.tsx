@@ -36,6 +36,12 @@ export default function AppSidebar() {
           >
             <span>Documents</span>
           </Link>
+          <Link
+            href="/invoices"
+            className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+          >
+            <span>Invoices</span>
+          </Link>
         </SidebarMenu>
         <div className="flex-1 overflow-y-auto">
           <Suspense fallback={<ChatHistorySkeleton />}>

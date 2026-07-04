@@ -29,6 +29,11 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   searxng:
     image: searxng/searxng
@@ -39,6 +44,11 @@ services:
       - ./searxng-limiter.toml:/etc/searxng/limiter.toml
       - ./searxng-settings.yml:/etc/searxng/settings.yml
       - searxng_data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8080/healthz || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   gotenberg:
     image: gotenberg/gotenberg:8
@@ -47,6 +57,11 @@ services:
       - '3001:3000'
     volumes:
       - ./storage:/storage
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:3000/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

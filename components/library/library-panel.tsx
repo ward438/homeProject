@@ -26,7 +26,12 @@ import { deleteFile, listFiles } from '@/lib/actions/files'
 import { deleteNote, listNotes } from '@/lib/actions/notes'
 import { captureClient } from '@/lib/analytics/posthog-client'
 import type { Note } from '@/lib/db/schema'
-import { stripMarkdownText } from '@/lib/utils/markdown'
+import type {
+  LibraryActiveTab,
+  LibraryDeleteConfirmationTarget
+} from '@/lib/types/library'
+import { formatBytes, formatNoteDate, getExcerpt } from '@/lib/utils/format'
+import { stripMarkdownTitle } from '@/lib/utils/markdown'
 
 import {
   AlertDialog,
@@ -58,39 +63,8 @@ import { useLibrary } from './library-context'
 const LIBRARY_CACHE_TTL_MS = 60_000
 const LIBRARY_PAGE_SIZE = 25
 
-type LibraryTab = 'all' | 'notes' | 'files'
-type DeleteTarget =
-  | { kind: 'note'; item: Note; source: 'library_list' | 'library_detail' }
-  | {
-      kind: 'file'
-      item: LibraryFileItem
-      source: 'library_list' | 'library_detail'
-    }
-
-function formatNoteDate(value: Date | string) {
-  const date = value instanceof Date ? value : new Date(value)
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
-
-function getExcerpt(content: string) {
-  return stripMarkdownText(content).slice(0, 140)
-}
-
-function formatBytes(value: number | null) {
-  if (!value) return 'Unknown size'
-  if (value < 1024) return `${value} B`
-  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`
-  return `${(value / 1024 / 1024).toFixed(1)} MB`
-}
-
-function stripMarkdownTitle(value: string) {
-  return stripMarkdownText(value)
-}
+type LibraryTab = LibraryActiveTab
+type DeleteTarget = LibraryDeleteConfirmationTarget
 
 function fileIcon(file: LibraryFileItem) {
   return file.mediaType.startsWith('image/') ? Photo : FileIcon
