@@ -6,6 +6,7 @@ import {
   integer,
   json,
   jsonb,
+  numeric,
   pgPolicy,
   pgTable,
   text,
@@ -469,3 +470,126 @@ export const feedback = pgTable(
 ).enableRLS()
 
 export type Feedback = InferSelectModel<typeof feedback>
+
+// Invoice sequences table (one row per user for auto-numbering)
+export const invoiceSequences = pgTable(
+  'invoice_sequences',
+  {
+    userId: varchar('user_id', { length: USER_ID_LENGTH }).primaryKey(),
+    lastNumber: integer('last_number').notNull().default(0)
+  },
+  table => [
+    pgPolicy('users_manage_own_invoice_sequences', {
+      as: 'permissive',
+      for: 'all',
+      to: 'public',
+      using: sql`user_id = (select current_setting('app.current_user_id', true))`,
+      withCheck: sql`user_id = (select current_setting('app.current_user_id', true))`
+    })
+  ]
+).enableRLS()
+
+// Invoices table
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: varchar('id', { length: ID_LENGTH })
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+    userId: varchar('user_id', { length: USER_ID_LENGTH }).notNull(),
+    invoiceNumber: varchar('invoice_number', {
+      length: VARCHAR_LENGTH
+    }).notNull(),
+    status: varchar('status', {
+      length: VARCHAR_LENGTH,
+      enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled']
+    })
+      .notNull()
+      .default('draft'),
+    issuedAt: timestamp('issued_at').notNull().defaultNow(),
+    dueDate: timestamp('due_date'),
+    sellerInfo: jsonb('seller_info').notNull().$type<{
+      name: string
+      address: string
+      email: string
+      phone: string
+      logoImageData?: string
+    }>(),
+    billedTo: jsonb('billed_to')
+      .notNull()
+      .$type<{ name: string; address: string; email: string; phone: string }>(),
+    lineItems: jsonb('line_items').notNull().default([]).$type<
+      Array<{
+        description: string
+        sku?: string
+        qty: number
+        unitPrice: number
+        subtotal: number
+      }>
+    >(),
+    subtotal: numeric('subtotal').notNull().default('0'),
+    discountAmount: numeric('discount_amount').notNull().default('0'),
+    discountCode: text('discount_code'),
+    taxRate: numeric('tax_rate').notNull().default('0'),
+    taxAmount: numeric('tax_amount').notNull().default('0'),
+    shippingHandling: numeric('shipping_handling').notNull().default('0'),
+    grandTotal: numeric('grand_total').notNull().default('0'),
+    paymentMethod: text('payment_method'),
+    shippingMethod: text('shipping_method'),
+    notes: text('notes'),
+    footerMessage: text('footer_message'),
+    exportedDocumentId: varchar('exported_document_id', {
+      length: ID_LENGTH
+    }).references(() => documents.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow()
+  },
+  table => [
+    index('invoices_user_id_idx').on(table.userId),
+    index('invoices_user_id_created_at_idx').on(
+      table.userId,
+      table.createdAt.desc()
+    ),
+    index('invoices_status_idx').on(table.status),
+    pgPolicy('users_manage_own_invoices', {
+      as: 'permissive',
+      for: 'all',
+      to: 'public',
+      using: sql`user_id = (select current_setting('app.current_user_id', true))`,
+      withCheck: sql`user_id = (select current_setting('app.current_user_id', true))`
+    })
+  ]
+).enableRLS()
+
+export type Invoice = InferSelectModel<typeof invoices>
+export type NewInvoice = typeof invoices.$inferInsert
+
+// Clients table
+export const clients = pgTable(
+  'clients',
+  {
+    id: varchar('id', { length: ID_LENGTH })
+      .primaryKey()
+      .$defaultFn(() => generateId()),
+    userId: varchar('user_id', { length: USER_ID_LENGTH }).notNull(),
+    name: text('name').notNull(),
+    email: text('email'),
+    address: text('address'),
+    phone: text('phone'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow()
+  },
+  table => [
+    index('clients_user_id_idx').on(table.userId),
+    pgPolicy('users_manage_own_clients', {
+      as: 'permissive',
+      for: 'all',
+      to: 'public',
+      using: sql`user_id = (select current_setting('app.current_user_id', true))`,
+      withCheck: sql`user_id = (select current_setting('app.current_user_id', true))`
+    })
+  ]
+).enableRLS()
+
+export type Client = InferSelectModel<typeof clients>
+export type NewClient = typeof clients.$inferInsert
