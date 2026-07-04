@@ -10,7 +10,7 @@ import {
 } from '@/lib/db/schema'
 import { withRLS } from '@/lib/db/with-rls'
 
-import type { FormField, JsonValue } from './types'
+import type { FormField, JsonValue, TitleStyle } from './types'
 
 export async function createDocument(
   data: Omit<NewDocument, 'createdAt'>
@@ -148,12 +148,7 @@ export async function updateFormTemplate(
   templateId: string,
   data: Partial<Pick<FormTemplate, 'name' | 'exportedDocumentId'>> & {
     fields?: FormField[]
-    titleStyle?: {
-      fontSize?: number
-      fontWeight?: 'bold' | 'normal'
-      color?: string
-      spacingBelow?: number
-    }
+    titleStyle?: Partial<TitleStyle>
   }
 ): Promise<FormTemplate | null> {
   return withRLS(userId, async tx => {
@@ -181,17 +176,5 @@ export async function updateFormTemplate(
       .returning()
 
     return updated ?? null
-  })
-}
-
-export async function listFormTemplates(
-  userId: string
-): Promise<FormTemplate[]> {
-  return withRLS(userId, async tx => {
-    return tx
-      .select()
-      .from(formTemplates)
-      .where(eq(formTemplates.userId, userId))
-      .orderBy(desc(formTemplates.createdAt))
   })
 }

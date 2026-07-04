@@ -76,17 +76,7 @@ const FONT_SIZES = [
   '48'
 ]
 
-// ---- design tokens matching the form builder dark theme
-const C = {
-  panel: '#171a21',
-  panel2: '#1e2230',
-  border: '#2c3140',
-  input: '#10131a',
-  text: '#e8eaf0',
-  muted: '#9aa1b2',
-  accent: '#6c9eff',
-  accentText: '#0b1020'
-}
+import { C } from '@/components/documents/form-builder/theme'
 
 interface Props {
   label: string

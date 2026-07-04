@@ -2,7 +2,7 @@ import { createId } from '@paralleldrive/cuid2'
 import fs from 'fs/promises'
 import path from 'path'
 
-import { getStorageRoot } from './constants'
+import { getStorageRoot, MIME_BY_EXTENSION } from './constants'
 
 export function getDocumentDir(userId: string, documentId: string): string {
   return path.join(getStorageRoot(), userId, documentId)
@@ -80,15 +80,7 @@ export function createDocumentId(): string {
 
 export function getMimeFromFilename(filename: string): string | null {
   const ext = path.extname(filename).toLowerCase()
-  const map: Record<string, string> = {
-    '.pdf': 'application/pdf',
-    '.txt': 'text/plain',
-    '.json': 'application/json',
-    '.docx':
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    '.doc': 'application/msword'
-  }
-  return map[ext] ?? null
+  return MIME_BY_EXTENSION[ext] ?? null
 }
 
 export function resolveRelativePath(absolutePath: string): string {

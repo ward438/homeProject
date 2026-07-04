@@ -2,6 +2,7 @@ import Image from 'next/image'
 
 import type { SearchResultItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { getFaviconUrl } from '@/lib/utils/favicon'
 
 interface SourceFaviconsProps {
   results: SearchResultItem[]
@@ -48,7 +49,7 @@ export function SourceFavicons({
           }}
         >
           <Image
-            src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`}
+            src={getFaviconUrl(`https://${domain}`, 16)}
             alt={domain}
             width={16}
             height={16}

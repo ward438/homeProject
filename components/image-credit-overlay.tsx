@@ -2,6 +2,7 @@
 'use client'
 
 import { displayUrlName } from '@/lib/utils/domain'
+import { getFaviconUrl } from '@/lib/utils/favicon'
 
 /**
  * Normalize a user- or model-supplied URL to a safe http(s) URL, or return
@@ -18,15 +19,6 @@ const sanitizeHttpUrl = (raw: string | undefined): string | null => {
     return null
   } catch {
     return null
-  }
-}
-
-export const getFaviconUrl = (imageUrl: string): string => {
-  try {
-    const hostname = new URL(imageUrl).hostname
-    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`
-  } catch {
-    return ''
   }
 }
 

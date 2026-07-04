@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Box, Button, Stack, Tab, Tabs, Typography } from '@mui/material'
 
-import type { DocumentRecord } from '@/lib/documents/types'
+import type {
+  DocumentRecord,
+  DocumentWorkspaceTabId
+} from '@/lib/documents/types'
 
 import { DocumentList } from './document-list'
 import { DocumentUpload } from './document-upload'
@@ -14,7 +17,7 @@ import { PdfFormFiller } from './pdf-form-filler'
 import { PdfViewer } from './pdf-viewer'
 import { TextAnalyzer } from './text-analyzer'
 
-type TabId = 'view' | 'analyze' | 'edit' | 'fill' | 'json'
+type TabId = DocumentWorkspaceTabId
 
 function fileUrl(id: string, download = false) {
   return `/api/documents/${id}/file?variant=pdf${download ? '&download=1' : ''}`

@@ -19,3 +19,12 @@ export function stripMarkdownText(value: string) {
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+/**
+ * Strip markdown formatting from a title string (e.g. first line of a note).
+ * Delegates to stripMarkdownText — extracted here so it can be shared across
+ * server actions and client components without duplication.
+ */
+export function stripMarkdownTitle(value: string): string {
+  return stripMarkdownText(value)
+}
