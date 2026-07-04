@@ -81,7 +81,8 @@ import {
   rebalanceOverflow,
   ROW_GAP,
   ROW_GAP_COMPACT,
-  SCALE} from './field-factory'
+  SCALE
+} from './field-factory'
 import { TableEditor } from './table-editor'
 import {
   C,

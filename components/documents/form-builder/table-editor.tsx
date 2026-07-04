@@ -20,7 +20,8 @@ import {
   DEFAULT_TABLE_HEADER_HEIGHT,
   DEFAULT_TABLE_ROW_HEIGHT,
   px,
-  TABLE_TITLE_HEIGHT} from './field-factory'
+  TABLE_TITLE_HEIGHT
+} from './field-factory'
 import { defaultTableConfig } from './field-factory'
 import {
   C,
