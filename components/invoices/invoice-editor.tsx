@@ -585,7 +585,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                       type="number"
                       placeholder="1"
                       value={item.qty}
-                      inputProps={{ min: 0, step: 1 }}
+                      slotProps={{ htmlInput: { min: 0, step: 1 } }}
                       onChange={e =>
                         updateLineItem(idx, 'qty', Number(e.target.value))
                       }
@@ -598,7 +598,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                       type="number"
                       placeholder="0.00"
                       value={item.unitPrice}
-                      inputProps={{ min: 0, step: 0.01 }}
+                      slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                       onChange={e =>
                         updateLineItem(idx, 'unitPrice', Number(e.target.value))
                       }
@@ -609,7 +609,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     <TextField
                       size="small"
                       value={item.subtotal.toFixed(2)}
-                      inputProps={{ readOnly: true }}
+                      slotProps={{ htmlInput: { readOnly: true } }}
                       fullWidth
                     />
                   </Box>
@@ -647,7 +647,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     size="small"
                     type="number"
                     value={state.discountAmount}
-                    inputProps={{ min: 0, step: 0.01 }}
+                    slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                     onChange={e => s('discountAmount', Number(e.target.value))}
                     sx={{ flex: 1 }}
                   />
@@ -665,7 +665,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     size="small"
                     type="number"
                     value={state.taxRate}
-                    inputProps={{ min: 0, max: 100, step: 0.1 }}
+                    slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
                     onChange={e => s('taxRate', Number(e.target.value))}
                     sx={{ flex: 1 }}
                   />
@@ -674,7 +674,7 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     size="small"
                     type="number"
                     value={state.shippingHandling}
-                    inputProps={{ min: 0, step: 0.01 }}
+                    slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
                     onChange={e =>
                       s('shippingHandling', Number(e.target.value))
                     }
@@ -694,7 +694,10 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                 }}
               >
                 <Stack spacing={0.5}>
-                  <Stack direction="row" justifyContent="space-between">
+                  <Stack
+                    direction="row"
+                    sx={{ justifyContent: 'space-between' }}
+                  >
                     <Typography variant="body2" color="text.secondary">
                       Subtotal
                     </Typography>
@@ -703,7 +706,10 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     </Typography>
                   </Stack>
                   {state.discountAmount > 0 && (
-                    <Stack direction="row" justifyContent="space-between">
+                    <Stack
+                      direction="row"
+                      sx={{ justifyContent: 'space-between' }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         Discount
                       </Typography>
@@ -713,7 +719,10 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     </Stack>
                   )}
                   {state.taxRate > 0 && (
-                    <Stack direction="row" justifyContent="space-between">
+                    <Stack
+                      direction="row"
+                      sx={{ justifyContent: 'space-between' }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         Tax ({state.taxRate}%)
                       </Typography>
@@ -723,7 +732,10 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     </Stack>
                   )}
                   {state.shippingHandling > 0 && (
-                    <Stack direction="row" justifyContent="space-between">
+                    <Stack
+                      direction="row"
+                      sx={{ justifyContent: 'space-between' }}
+                    >
                       <Typography variant="body2" color="text.secondary">
                         Shipping
                       </Typography>
@@ -733,7 +745,10 @@ export function InvoiceEditor({ invoiceId, onSaved }: Props) {
                     </Stack>
                   )}
                   <Divider sx={{ my: 0.5 }} />
-                  <Stack direction="row" justifyContent="space-between">
+                  <Stack
+                    direction="row"
+                    sx={{ justifyContent: 'space-between' }}
+                  >
                     <Typography variant="subtitle2">Grand Total</Typography>
                     <Typography variant="subtitle2">
                       ${grandTotal.toFixed(2)}

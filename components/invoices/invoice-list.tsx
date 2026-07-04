@@ -152,7 +152,7 @@ export function InvoiceList({ selectedId, onSelect, onNew, refresh }: Props) {
           borderBottom: 1,
           borderColor: 'divider'
         }}
-        TabIndicatorProps={{ style: { height: 2 } }}
+        slotProps={{ indicator: { style: { height: 2 } } }}
       >
         {TABS.map(t => (
           <Tab
