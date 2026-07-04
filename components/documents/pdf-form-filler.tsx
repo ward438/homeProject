@@ -18,6 +18,7 @@ import {
   Typography
 } from '@mui/material'
 
+import type { PdfFillValues } from '@/lib/documents/form-fill'
 import type { PdfFormFieldInfo } from '@/lib/documents/types'
 
 type PdfFormFillerProps = {
@@ -25,11 +26,9 @@ type PdfFormFillerProps = {
   onSaved: (documentId?: string) => void
 }
 
-type FillValues = Record<string, string | boolean>
-
 export function PdfFormFiller({ documentId, onSaved }: PdfFormFillerProps) {
   const [fields, setFields] = useState<PdfFormFieldInfo[]>([])
-  const [values, setValues] = useState<FillValues>({})
+  const [values, setValues] = useState<PdfFillValues>({})
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

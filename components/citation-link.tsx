@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { SearchResultItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { isCitationLabel } from '@/lib/utils/citation'
+import { getFaviconUrl } from '@/lib/utils/favicon'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -21,7 +22,6 @@ interface CitationLinkProps {
   citationData?: SearchResultItem
 }
 
-// Helper function to safely extract hostname from URL
 const getHostname = (url: string): string => {
   try {
     return new URL(url).hostname
@@ -95,9 +95,7 @@ export const CitationLink = memo(function CitationLink({
                 <div className="flex items-center gap-2">
                   <Avatar className="h-4 w-4 shrink-0">
                     <AvatarImage
-                      src={`https://www.google.com/s2/favicons?domain=${getHostname(
-                        citationData.url
-                      )}`}
+                      src={getFaviconUrl(citationData.url)}
                       alt={getHostname(citationData.url)}
                     />
                     <AvatarFallback className="text-xs">

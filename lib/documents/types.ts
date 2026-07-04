@@ -1,5 +1,16 @@
 export type DocumentStatus = 'uploaded' | 'converted' | 'ready'
 
+/**
+ * The active tab in the documents workspace panel.
+ * Determines which document tool (viewer, analyzer, builder, filler, JSON) is shown.
+ */
+export type DocumentWorkspaceTabId =
+  | 'view'
+  | 'analyze'
+  | 'edit'
+  | 'fill'
+  | 'json'
+
 export type TitleStyle = {
   fontSize: number
   fontWeight: 'bold' | 'normal'

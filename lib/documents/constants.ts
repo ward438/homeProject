@@ -8,15 +8,6 @@ export const ALLOWED_MIMES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ] as const
-
-export const ALLOWED_EXTENSIONS = [
-  '.pdf',
-  '.txt',
-  '.json',
-  '.docx',
-  '.doc'
-] as const
-
 export const MIME_BY_EXTENSION: Record<string, string> = {
   '.pdf': 'application/pdf',
   '.txt': 'text/plain',
